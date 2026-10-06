@@ -1,0 +1,546 @@
+{
+  "name": "Company Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "company-onboarding",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1216,
+        -96
+      ],
+      "id": "fb99d5d9-f627-4cdf-816d-c61cef734435",
+      "name": "Company Onboarding Webhook",
+      "webhookId": "26bb7030-af85-44cb-a818-027cf094a746"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b366d9a1-2e8a-4380-83d7-4321ed3b1200",
+              "name": "company_id",
+              "value": "={{ $('Generate Company ID').item.json.company_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6b66450c-e92f-4c31-a58f-8e7eb72642d5",
+              "name": "company_name",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "837333f0-9905-4415-9346-bdf55e1931ed",
+              "name": "industry",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "58556cbe-04b4-44e1-96f8-7438cf4b7ee8",
+              "name": "location",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.location }}",
+              "type": "string"
+            },
+            {
+              "id": "7ca340e1-3fc3-46de-932b-e371950be5c6",
+              "name": "contact_info",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.contact_info }}",
+              "type": "string"
+            },
+            {
+              "id": "5fa32b1f-4609-4997-b182-2b1d65041e7e",
+              "name": "business_hours",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.business_hours }}",
+              "type": "string"
+            },
+            {
+              "id": "5f48dd4e-b2c4-4b67-8a91-43861b0df710",
+              "name": "services",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.services }}",
+              "type": "string"
+            },
+            {
+              "id": "cd4123dd-4276-49df-bdec-3e2e3e88aacb",
+              "name": "pricing",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.pricing }}",
+              "type": "string"
+            },
+            {
+              "id": "cfb039f4-f7b9-459b-8dea-7fc765e67fb9",
+              "name": "policies",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.policies }}",
+              "type": "string"
+            },
+            {
+              "id": "0ca2e37f-93e7-476e-a56d-e460e2c13f08",
+              "name": "workflows",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.workflows }}",
+              "type": "string"
+            },
+            {
+              "id": "17ca4a67-96cb-449c-a4e9-5002c033fff3",
+              "name": "permissions",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.permissions }}",
+              "type": "string"
+            },
+            {
+              "id": "5e9f7d5e-57fb-4cf2-a441-7c9231638d06",
+              "name": "services",
+              "value": "={{ $('Company Onboarding Webhook').item.json.body.services }} - Cloud Security Assessment Prerequisites: Read-only access, IAM security policies for AWS and Azure.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -448,
+        -224
+      ],
+      "id": "8dd66376-3daf-4ce6-b90b-bea4a2def923",
+      "name": "Prepare Company DNA"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "company_name": "={{ $json.company_name }}",
+            "industry": "={{ $json.industry }}",
+            "location": "={{ $json.location }}",
+            "contact_info": "={{ $json.contact_info }}",
+            "business_hours": "={{ $json.business_hours }}",
+            "services": "={{ $json.services }}",
+            "pricing": "={{ $json.pricing }}",
+            "policies": "={{ $json.policies }}",
+            "workflows": "={{ $json.workflows }}",
+            "permissions": "={{ $json.permissions }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -176,
+        -80
+      ],
+      "id": "fd550dd8-4004-4006-9704-c3e62a206102",
+      "name": "Save Company DNA"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n  {\n    success: true,\n    message: \"Company information saved successfully\",\n    company_id: $json.company_id || $('Prepare Company DNA').item.json.company_id\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "e724e03e-d0f2-4db3-9c2f-d6996b6eed20",
+      "name": "Company Onboarding Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8b65068e-7f86-4356-b780-3ae913dbf0cd",
+              "name": "company_id",
+              "value": "={{ $json.body.company_id || $json.company_id || ('COMP' + Math.floor(1000 + Math.random() * 9000)) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -992,
+        -96
+      ],
+      "id": "ae565b80-c0af-443d-b045-c52ec26426ad",
+      "name": "Generate Company ID"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        -80
+      ],
+      "id": "4a364660-1eba-4752-aea2-f0536fa09b01",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d29a0867-ef8c-46a6-90ff-7cfdd9765ec6",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.company_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "fcbf3467-eba4-4854-bd6a-de77aa1e7c10",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.industry }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "92c69a34-3716-46c9-9197-4efccd0fee7d",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.location }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "95d68790-ebcd-4155-ad45-26dab58a4883",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.contact_info }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "99305e70-e412-4180-931d-7b4a23f88d58",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.business_hours }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "583bb347-acde-4e63-aa55-4c1d04c0f046",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.services }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1c5766b2-58f1-4796-a430-d7780e02fb4f",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.pricing }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "02a43807-16eb-4fc3-86dc-34bc8b6c5d5a",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.policies }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cef66ffa-1078-45a9-9d92-42af8fa7bab7",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.workflows }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "58674bd5-9992-4edc-989d-0097b59b4d85",
+              "leftValue": "={{ $('Company Onboarding Webhook').item.json.body.permissions }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -736,
+        -96
+      ],
+      "id": "d695ef32-9778-4bac-a392-5da1aa3d8d19",
+      "name": "Validate Company Input"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"error\": \"Invalid company information\",\n  \"message\": \"Required company information is missing.\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -448,
+        48
+      ],
+      "id": "a057aa9f-8fc6-4bff-a0de-b47d542d4afd",
+      "name": "Invalid Company Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "zvgu7szjLKvpviav",
+          "mode": "list",
+          "cachedResultName": "Product_Commercial_DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "products": "={{ $json.products }}",
+            "services": "={{ $json.services }}",
+            "pricing": "={{ $json.pricing }}",
+            "customer_segments": "={{ $json.customer_segments }}",
+            "target_market": "={{ $json.target_market }}",
+            "sales_channels": "={{ $json.sales_channels }}",
+            "offers": "={{ $json.offers }}",
+            "commercial_policies": "={{ $json.commercial_policies }}",
+            "created_at": "={{ $json.created_at }}",
+            "updated_at": "={{ $json.updated_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "2a8c2c45-a295-4c1d-a7d6-0e3ee81f62c2",
+      "name": "Save Product Commercial DNA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const company = $('Prepare Company DNA').first().json;\n\nreturn [{\n  json: {\n    company_id: company.company_id,\n    products: company.services,\n    services: company.services,\n    pricing: company.pricing,\n    customer_segments: \"\",\n    target_market: \"\",\n    sales_channels: \"\",\n    offers: \"\",\n    commercial_policies: \"\",\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -80
+      ],
+      "id": "5e10ea3b-90b7-4d79-a822-55283922ab9c",
+      "name": "Prepare Product Commercial DNA"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Company Onboarding Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate Company ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Save Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Prepare Product Commercial DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Company ID": {
+      "main": [
+        [
+          {
+            "node": "Validate Company Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Company Onboarding Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Company Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Company Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Product Commercial DNA": {
+      "main": [
+        [
+          {
+            "node": "Save Product Commercial DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Product Commercial DNA": {
+      "main": [
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0fc38d7e-df1d-4b21-b5d4-029163cfb31d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "44764bfZUQ38qovr",
+  "tags": []
+}
