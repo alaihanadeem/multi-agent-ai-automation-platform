@@ -1,0 +1,1078 @@
+{
+  "name": "Quote & Proposal Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "opportunity_id"
+            },
+            {
+              "name": "lead_id"
+            },
+            {
+              "name": "company_id"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "customer_name"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "requested_service"
+            },
+            {
+              "name": "business_need"
+            },
+            {
+              "name": "matched_solution"
+            },
+            {
+              "name": "next_step"
+            },
+            {
+              "name": "customer_message"
+            }
+          ]
+        }
+      },
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -544,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9064495f-d5d3-435b-8305-7b017491812a",
+              "name": "quote_request_accepted",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "8cfa4852-0f30-47ae-88dc-e4c3f44bf67d",
+              "name": "opportunity_id",
+              "value": "=OPP-1790077795511",
+              "type": "string"
+            },
+            {
+              "id": "5e00fb17-628d-434f-982a-75b9fae71544",
+              "name": "lead_id",
+              "value": "=LEAD-TEST-001",
+              "type": "string"
+            },
+            {
+              "id": "511931a3-ded0-4e21-8868-dda0480adf26",
+              "name": "company_id",
+              "value": "=COMP001",
+              "type": "string"
+            },
+            {
+              "id": "4d88f450-a6db-453d-b94e-380a761a50f6",
+              "name": "session_id",
+              "value": "=TEST-001",
+              "type": "string"
+            },
+            {
+              "id": "2973a629-ea4c-4b14-a660-b7ff38d740e3",
+              "name": "customer_name",
+              "value": "=Ali",
+              "type": "string"
+            },
+            {
+              "id": "4d1205cd-c288-4fc6-9cce-a93136d9ce35",
+              "name": "email ",
+              "value": "=ali@example.com",
+              "type": "string"
+            },
+            {
+              "id": "2bccc1c0-ac11-4b7f-b27e-336654421a09",
+              "name": "requested_service",
+              "value": "=Cloud Security Assessment",
+              "type": "string"
+            },
+            {
+              "id": "df1454df-2cc2-40c4-86ee-f0db78052cc8",
+              "name": "business_need",
+              "value": "=improve cloud security",
+              "type": "string"
+            },
+            {
+              "id": "9cd80517-ac8e-459d-9175-e901886afdd2",
+              "name": "matched_solution",
+              "value": "=Cloud Security Assessment",
+              "type": "string"
+            },
+            {
+              "id": "c3c41f75-a8da-4ea1-a53a-1c7bcca09734",
+              "name": "customer_message ",
+              "value": "=I’m interested in the Cloud Security Assessment. Please send me a quote for it.",
+              "type": "string"
+            },
+            {
+              "id": "aa29ffcd-9446-4c9a-a202-7dfb07579968",
+              "name": "quote_request_accepted",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -304,
+        592
+      ],
+      "id": "516833dc-f485-46fb-b5fb-34ff9bd63764",
+      "name": "Accept Quote Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b8455c78-f9f4-4e14-91f6-7821930ffffe",
+              "leftValue": "={{ String($json.quote_request_accepted).toLowerCase() === 'true' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "211f5b05-c638-4a27-811b-6d5af4b93325",
+              "leftValue": "={{ $json.opportunity_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "45eb8f12-f2ec-4f52-a049-743b9afb2a38",
+              "leftValue": "={{ $json.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        240
+      ],
+      "id": "b2a342e2-4e95-45bd-b045-1a17cb51ae55",
+      "name": "Validate Quote Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0363c76-d19e-4e61-b4e7-25fc1f5e8071",
+              "name": "quote_status",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "5de5038e-38ac-48ed-8d50-e557edfc5efe",
+              "name": "response ",
+              "value": " Quote request could not be validated.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        80,
+        480
+      ],
+      "id": "c5443170-ac47-4389-bc60-e8018b9d232d",
+      "name": "Reject Quote Request"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        224
+      ],
+      "id": "8b5bd29f-c76d-4312-93bf-2e5b83493b7c",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1674848-55d4-48bf-a694-763c10cc742d",
+              "name": "quote_id        ",
+              "value": "={{$json.quote_id}}",
+              "type": "string"
+            },
+            {
+              "id": "2ec8d812-4cdc-4fad-81d5-5671ca757e6a",
+              "name": "opportunity_id  ",
+              "value": "={{$json.opportunity_id}}",
+              "type": "string"
+            },
+            {
+              "id": "e1f0979e-f1ec-455e-b001-7c449eb6c24b",
+              "name": "quote_status    ",
+              "value": "={{$json.quote_status}}",
+              "type": "string"
+            },
+            {
+              "id": "1ffe2f6d-b827-4384-b313-434b62eaae0e",
+              "name": "assistant_message",
+              "value": "={{$json.response}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        480
+      ],
+      "id": "2fd0b870-c4b4-4c58-aa07-a33b29e44eb9",
+      "name": "Return Quote Result"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        560
+      ],
+      "id": "ba1bf6b6-a4b9-4013-9aa2-978bcb2dd290",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "ukylbuPpJtBVKCDN",
+          "mode": "list",
+          "cachedResultName": "Sales Quotes",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{$json.opportunity_id}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        560
+      ],
+      "id": "c7f19890-0f19-47bf-befd-f4e31e5aa53b",
+      "name": "Check Existing Quote",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7542415a-9a9b-4326-912e-e8d79246a543",
+              "leftValue": "={{ !!$json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        368
+      ],
+      "id": "f121c4ee-9049-4e7c-85d1-192bec6b035a",
+      "name": "Quote Exists?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a5267e2c-356f-45ea-8e09-9b7cdcb6cbfb",
+              "name": "quote_id          ",
+              "value": "={{$json.quote_id}}",
+              "type": "string"
+            },
+            {
+              "id": "93fbc1db-7bae-43a9-adac-7d0aa872d766",
+              "name": "opportunity_id  ",
+              "value": "={{$json.opportunity_id}}",
+              "type": "string"
+            },
+            {
+              "id": "f1a800ae-ead8-416c-b8b8-bb6cae3adeb4",
+              "name": "lead_id           ",
+              "value": "={{$json.lead_id}}",
+              "type": "string"
+            },
+            {
+              "id": "ca380e9d-86c1-4cab-a723-f4efe28601d6",
+              "name": "company_id",
+              "value": "={{$json.company_id}}",
+              "type": "string"
+            },
+            {
+              "id": "c0880198-bfdf-4c56-bca6-6751b237297c",
+              "name": "session_id ",
+              "value": "={{$json.session_id}}",
+              "type": "string"
+            },
+            {
+              "id": "7d93d93b-672e-457f-ba28-3cddf3c4fed0",
+              "name": "customer_name",
+              "value": "={{$json.customer_name}}",
+              "type": "string"
+            },
+            {
+              "id": "5f55d498-d0b7-44b0-ae4b-7686ca858714",
+              "name": "email             ",
+              "value": "={{$json.email}}",
+              "type": "string"
+            },
+            {
+              "id": "69dfbe8c-b1f6-4c19-bbdb-5e7e20957b29",
+              "name": "requested_service",
+              "value": "={{$json.requested_service}}",
+              "type": "string"
+            },
+            {
+              "id": "1ad1c100-c975-4c63-9d9e-e66185685dcc",
+              "name": "services          ",
+              "value": "={{$json.services}}",
+              "type": "string"
+            },
+            {
+              "id": "299cb8ab-247c-44e7-9d26-e207df375a06",
+              "name": "pricing           ",
+              "value": "={{$json.pricing}}",
+              "type": "string"
+            },
+            {
+              "id": "07903491-c0cf-4ebc-a463-487cfbacecdc",
+              "name": "policies          ",
+              "value": "= {{$json.policies}}",
+              "type": "string"
+            },
+            {
+              "id": "86364f71-5747-4d71-8c1a-d80f71ab895d",
+              "name": "permissions       ",
+              "value": "={{$json.permissions}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1104,
+        240
+      ],
+      "id": "fd7fff02-ef28-4743-a946-9a6f0f24d797",
+      "name": "Use Existing Quote"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "ukylbuPpJtBVKCDN",
+          "mode": "list",
+          "cachedResultName": "Sales Quotes",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_id": "=QUOTE-{{$now.toMillis()}}",
+            "opportunity_id": "={{ $('Merge').first().json.opportunity_id }}",
+            "company_id": "={{ $('Merge').first().json.company_id }}",
+            "lead_id": "={{ $('Merge').first().json.lead_id }}",
+            "session_id": "={{ $('Merge').first().json.session_id }}",
+            "customer_name": "={{ $('Merge').first().json.customer_name }}",
+            "email": "={{ $('Merge').first().json[\"email \"] }}",
+            "requested_service": "={{ $('Merge').first().json.requested_service }}",
+            "quote_status": "draft",
+            "approval_required": "false",
+            "approval_status": "not_required",
+            "created_at": "={{$now.toISO()}}",
+            "updated_at": "={{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        432
+      ],
+      "id": "b9b1247e-8409-4e62-b952-c73f48c9c825",
+      "name": "Create Quote Draft"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst requestedService = String(\n  input.requested_service || ''\n).trim();\n\nconst services = String(\n  input.services || ''\n).trim();\n\nconst pricing = String(\n  input.pricing || ''\n).trim();\n\nconst serviceMatch =\n  requestedService !== '' &&\n  services !== '' &&\n  (\n    services.toLowerCase().includes(requestedService.toLowerCase()) ||\n    requestedService.toLowerCase().includes(services.toLowerCase())\n  );\n\nconst pricingAvailable = pricing !== '';\n\nconst pricingValid = Boolean(\n  serviceMatch && pricingAvailable\n);\n\nreturn [{\n  json: {\n    quote_id: input.quote_id,\n    opportunity_id: input.opportunity_id,\n    lead_id: input.lead_id,\n    company_id: input.company_id,\n    session_id: input.session_id,\n    customer_name: input.customer_name,\n    email: input.email,\n    requested_service: requestedService,\n\n    services: services,\n    pricing: pricing,\n    policies: input.policies || '',\n    permissions: input.permissions || '',\n\n    service_match: serviceMatch,\n    pricing_available: pricingAvailable,\n    pricing_valid: pricingValid,\n    approval_required: !pricingValid,\n\n    pricing_reason: pricingValid\n      ? 'Service and company pricing information are available.'\n      : 'Pricing or service information requires clarification or approval.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        336
+      ],
+      "id": "c3f55c16-072d-4dcb-80c5-6bfc01a7111c",
+      "name": "Validate Pricing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dbe61961-a77b-424f-af16-a804a17242a7",
+              "leftValue": "={{$json.approval_required}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1648,
+        336
+      ],
+      "id": "9ce70879-7208-4c01-948b-cf7044402d64",
+      "name": "Pricing / Approval Required?"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "YJRHMCM8wVMRHTZY",
+          "mode": "list",
+          "cachedResultName": "Quote Approvals",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "approval_id": "=QA-{{$now.toMillis()}}",
+            "quote_id": "={{ $json.quote_id }}",
+            "opportunity_id": "={{ $json.opportunity_id }}",
+            "company_id": "={{$json.company_id}}",
+            "approval_type": "pricing_validation",
+            "requested_action": "={{$json.pricing_reason}}",
+            "requested_price": "={{$json.quoted_price}}",
+            "requested_discount": "={{$json.discount_percent}}",
+            "status": "pending",
+            "requested_by": "Quote & Proposal Agent",
+            "approved_by": "=",
+            "updated_at": "={{$now.toISO()}}",
+            "created_at": "={{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1856,
+        240
+      ],
+      "id": "f72b5a8e-c79e-4050-8f40-4d3d5817761e",
+      "name": "Create Quote Approval"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\nCustomer Request:\n{{ $('When Executed by Another Workflow').first().json.customer_message }}\n\nRequested Service:\n{{ $json.requested_service || $json.service || $('Validate Pricing').first().json.requested_service }}\n\nApproved Company Service:\n{{ $('Validate Pricing').first().json.services }}\n\nApproved Company Pricing:\n{{ $('Validate Pricing').first().json.pricing }}\n\nPricing Valid:\n{{ $('Validate Pricing').first().json.pricing_valid }}\n\nApproval Required:\n{{ $('Validate Pricing').first().json.approval_required }}\n\nClient Budget Range: {{ $json.budget_range || 'Not specified' }}\n\nScope Timeline: {{ $json.scope_timeline || 'Standard timeline' }}\n\nService Match:\n{{ $('Validate Pricing').first().json.service_match }}",
+        "options": {
+          "systemMessage": "You are the Quote & Proposal Agent.\n\nYour job is to create a quote using ONLY the provided Company DNA and Sales Opportunity data.\n\n==================================================\n1. SOURCE OF TRUTH\n==================================================\n\nCompany DNA is the ONLY source of truth for:\n\n* services\n* pricing\n* policies\n* permissions\n* approved offers\n* approved discounts\n\nNever use outside knowledge.\n\nNever invent, estimate, guess, assume, substitute, or calculate information that is not explicitly provided.\n\n==================================================\n2. SERVICE RULE\n===============\n\nOnly quote a service that exists in the provided Company DNA.\n\nIf the requested service does not match an approved Company DNA service:\n\n* quoted_price = \"\"\n* currency = \"\"\n* discount_percent = 0\n* final_price = \"\"\n* proposal_summary = \"\"\n* approval_required = true\n* quote_status = \"pending_approval\"\n* reason must explain that the requested service is not an approved Company DNA service\n* assistant_message must explain that the quote requires approval\n\nNever invent or suggest another service.\n\n==================================================\n3. PRICING RULE\n===============\n\nCompany DNA pricing must be used EXACTLY as provided for the requested service.\n\nIf Company DNA pricing for a service is available:\n\n* quoted_price MUST match the exact Company DNA price string\n* currency MUST be \"USD\" if pricing uses \"$\"\n* final_price MUST equal quoted_price when discount_percent is 0\n\nNEVER:\n\n* generate another price\n* estimate a price\n* calculate a price\n* guess a price\n* substitute a price\n* use any price not explicitly present in Company DNA\n\nIf pricing is missing, conflicting, unavailable, or unclear:\n\n* quoted_price = \"\"\n* currency = \"\"\n* discount_percent = 0\n* final_price = \"\"\n* approval_required = true\n* quote_status = \"pending_approval\"\n\n==================================================\n4. CURRENCY RULE\n================\n\nIf the approved Company DNA pricing uses \"$\":\n\n* currency MUST be \"USD\"\n\nDo not leave currency empty for a valid priced service.\n\nDo not invent another currency.\n\n==================================================\n5. DISCOUNT RULE\n================\n\ndiscount_percent MUST be 0 unless an explicitly approved discount is provided in Company DNA.\n\nNever invent a discount.\n\nIf discount_percent = 0:\n\nfinal_price MUST equal quoted_price exactly.\n\n==================================================\n6. CONTENT RULE\n===============\n\nDo NOT invent:\n\n* features\n* packages\n* quantities\n* deliverables\n* cloud providers\n* guarantees\n* ROI\n* timelines\n* implementation details\n* contract terms\n* validity periods\n* free offers\n* limited-time offers\n* promotions\n* discounts\n\nOnly use information explicitly provided by Company DNA or Sales Opportunity data.\n\n==================================================\n7. VALID QUOTE RULE\n===================\n\nA quote is valid ONLY when:\n\n* requested service matches an approved Company DNA service\n* pricing is available\n* pricing is valid\n* no pricing conflict exists\n\nWhen the quote is valid:\n\n* approval_required MUST be false\n* quote_status MUST be exactly \"draft\"\n* quoted_price MUST be the exact Company DNA pricing\n* currency MUST be \"USD\" when pricing uses \"$\"\n* discount_percent MUST be 0 unless an explicitly approved discount exists\n* final_price MUST equal quoted_price when discount is 0\n* proposal_summary MUST contain the approved service name\n* reason MUST NOT be empty\n* assistant_message MUST NOT be empty\n\nFor every valid quote:\n\nreason MUST be exactly:\n\n\"Quote uses the approved Company DNA pricing.\"\n\n==================================================\n8. VALID QUOTE — REQUIRED OUTPUT\n================================\n\nThe agent must dynamically match the requested service from the Sales Opportunity data with its approved price from Company DNA.\n\nWhen the service is valid and pricing is verified:\n\n{\n\"quoted_price\": \"[Dynamic Company DNA Price]\",\n\"currency\": \"USD\",\n\"discount_percent\": 0,\n\"final_price\": \"[Dynamic Company DNA Price]\",\n\"proposal_summary\": \"[Exact Approved Service Name]\",\n\"approval_required\": false,\n\"quote_status\": \"draft\",\n\"reason\": \"Quote uses the approved Company DNA pricing.\",\n\"assistant_message\": \"The quote for [Exact Approved Service Name] is [Dynamic Company DNA Price] based on the approved Company DNA pricing.\"\n}\n\nDO NOT leave any of these fields empty in a valid quote:\n\n* proposal_summary\n* quote_status\n* reason\n* assistant_message\n\n==================================================\n9. APPROVAL REQUIRED RULE\n=========================\n\nIf pricing is:\n\n* missing\n* conflicting\n* unavailable\n* unclear\n* not approved\n\nOR the requested service is not an approved Company DNA service:\n\nthen output:\n\n* approval_required = true\n* quote_status = \"pending_approval\"\n* quoted_price = \"\"\n* currency = \"\"\n* final_price = \"\"\n* discount_percent = 0\n\nreason MUST explain why approval is required.\n\nassistant_message MUST explain that the quote requires approval.\n\nDo not create or guess a price.\n\n==================================================\n10. PROPOSAL SUMMARY RULE\n=========================\n\nFor a valid quote:\n\nproposal_summary MUST be the exact approved Company DNA service name.\n\nNever leave proposal_summary empty for a valid quote.\n\n==================================================\n11. ASSISTANT MESSAGE RULE\n==========================\n\nFor a valid quote:\n\nassistant_message MUST clearly communicate the exact quoted price for the requested service.\n\nExample format:\n\"The quote for [Service Name] is [Price] based on the approved Company DNA pricing.\"\n\nFor an approval-required quote:\n\nassistant_message must clearly tell the customer that the quote requires approval.\n\nNever leave assistant_message empty.\n\n==================================================\n12. REASON RULE\n===============\n\nFor EVERY valid quote, reason MUST be exactly:\n\n\"Quote uses the approved Company DNA pricing.\"\n\nNever leave reason empty for a valid quote.\n\n==================================================\n13. OUTPUT FORMAT\n=================\n\nReturn ONLY ONE valid JSON object.\n\nThe JSON object MUST contain exactly these 9 fields:\n\n{\n\"quoted_price\": \"\",\n\"currency\": \"\",\n\"discount_percent\": 0,\n\"final_price\": \"\",\n\"proposal_summary\": \"\",\n\"approval_required\": false,\n\"quote_status\": \"\",\n\"reason\": \"\",\n\"assistant_message\": \"\"\n}\n\nAll 9 fields are required.\n\nDo not omit any field.\n\nDo not add any field.\n\nBoolean fields must be actual JSON booleans:\n\ntrue\n\nor:\n\nfalse\n\ndiscount_percent must be a JSON number.\n\nDo not use:\n\n\"true\"\n\n\"false\"\n\nor:\n\n\"0\"\n\nfor boolean/number fields.\n\n==================================================\n14. FINAL VALIDATION BEFORE OUTPUT\n================================--\n\nBefore returning the JSON, verify:\n\n1. Service is approved by Company DNA.\n2. Pricing comes directly from Company DNA.\n3. Pricing has not been changed.\n4. Currency matches the provided pricing.\n5. Discount is approved or 0.\n6. Final price is correct.\n7. proposal_summary is populated for a valid quote.\n8. quote_status is \"draft\" for a valid quote.\n9. approval_required is false for a valid quote.\n10. reason is populated.\n11. assistant_message is populated.\n12. Exactly 9 fields are returned.\n13. No markdown.\n14. No code fences.\n15. No explanation outside JSON.\n\nIf the quote is valid, NEVER output empty values for:\n\nproposal_summary\n\nquote_status\n\nreason\n\nassistant_message\n\nReturn ONLY the final JSON object.\n1. **Dynamic Service Detection:**\n   - Always analyze the user's message (or `requested_service`) to identify which specific service they are asking for (e.g., \"ISO 27001 audit readiness\", \"SOC 2 Type II\", \"Cloud Security Assessment\", \"Penetration Testing\").\n   - Do NOT default to \"Cloud Security Assessment\" unless the user specifically asked for it.\n\n2. **Pricing Retrieval from Company DNA:**\n   - Match the requested service with the approved Company DNA pricing list.\n   - If a specific quote or pricing is found for that service, return that exact service name and its corresponding price.\n   - If multiple services are requested (e.g., ISO 27001 and SOC 2), provide estimates or package pricing for both based on the company data."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2096,
+        352
+      ],
+      "id": "27f1c6ba-5977-4c3a-9b32-e66e4e6def58",
+      "name": "Quote Agent"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "ukylbuPpJtBVKCDN",
+          "mode": "list",
+          "cachedResultName": "Sales Quotes",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Validate Pricing').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quoted_price": "={{ $json.quoted_price }}",
+            "currency": "={{ $json.currency }}",
+            "discount_percent": "={{ $json.discount_percent }}",
+            "final_price": "={{ $json.final_price }}",
+            "proposal_summary": "={{ $json.proposal_summary }}",
+            "quote_status": "={{ $json.quote_status }}",
+            "approval_required": "={{ $json.approval_required }}",
+            "updated_at": "={{$now.toISO()}}",
+            "valid_until": "={{ $now.plus({ days: 30 }).toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        352
+      ],
+      "id": "0dfce29d-d2a5-48b4-8742-977868fa09b2",
+      "name": "Update Quote"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "AG98UC9Lp6MiCEgQ",
+          "mode": "list",
+          "cachedResultName": "Quote Activities",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "activity_id": "=QA-ACT-{{$now.toMillis()}}",
+            "quote_id": "={{ $('Update Quote').first().json.quote_id }}",
+            "opportunity_id": "={{ $('Update Quote').first().json.opportunity_id }}",
+            "company_id": "={{ $('Update Quote').first().json.company_id }}",
+            "activity_type": "quote_prepared",
+            "customer_request": "={{ $('Accept Quote Request').first().json[\"customer_message \"] }}",
+            "agent_response": "={{ $('Quote Agent').first().json.output }}",
+            "evidence_used": "=Company DNA",
+            "created_at": "={{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2864,
+        352
+      ],
+      "id": "15907241-e4f2-40a2-9787-ed72817cb099",
+      "name": "Log Quote Activity"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4de13e8b-8754-4691-a757-cc4b343d3b73",
+              "name": "quote_id ",
+              "value": "={{$json.quote_id}}",
+              "type": "string"
+            },
+            {
+              "id": "c7ce1e67-d31d-4944-bb22-b3ef0cc2075c",
+              "name": "opportunity_id",
+              "value": "={{$json.opportunity_id}}",
+              "type": "string"
+            },
+            {
+              "id": "bc4f31a4-91aa-4af5-9efb-412590ace431",
+              "name": "quote_status",
+              "value": "={{ $('Parse Quote Agent Output').first().json.quote_status }}",
+              "type": "string"
+            },
+            {
+              "id": "0e4c0d62-02b9-4aa2-810d-24623833b43e",
+              "name": "quoted_price",
+              "value": "={{ $('Parse Quote Agent Output').first().json.quoted_price }}",
+              "type": "string"
+            },
+            {
+              "id": "cc4fce3b-1976-4262-a3e8-be709aa06205",
+              "name": "currency ",
+              "value": "={{ $('Parse Quote Agent Output').first().json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "991150a4-dbff-417a-8370-f6020722fa71",
+              "name": "discount_percent",
+              "value": "={{ $('Parse Quote Agent Output').first().json.discount_percent }}",
+              "type": "string"
+            },
+            {
+              "id": "cc091ec7-24ba-4daa-8407-163dd9bfd1b8",
+              "name": "final_price",
+              "value": "={{ $('Parse Quote Agent Output').first().json.final_price }}",
+              "type": "string"
+            },
+            {
+              "id": "698c1799-e6d3-43d9-860e-74e1bcaa6782",
+              "name": "approval_required",
+              "value": "={{ $('Parse Quote Agent Output').first().json.approval_required }}",
+              "type": "string"
+            },
+            {
+              "id": "c89c6db8-04c2-44ee-8923-cbbabae503d7",
+              "name": "proposal_summary ",
+              "value": "={{ $('Parse Quote Agent Output').first().json.proposal_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "2e9b2c60-f824-4579-9bc5-ffd82e46a0cc",
+              "name": "assistant_message",
+              "value": "={{ $('Parse Quote Agent Output').first().json.assistant_message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3088,
+        352
+      ],
+      "id": "0dfc57b8-da17-40d2-96a1-e11b5d6a917b",
+      "name": "Return Quote Result1"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        544
+      ],
+      "id": "41df914d-6cf4-4055-800e-48370fc66fda",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2144,
+        608
+      ],
+      "id": "d741c9d8-5308-4cfa-90ac-597a88bb65a2",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst dna = $('Merge').first().json;\nconst existing =$('Check Existing Quote').first().json;\n\nfunction getValue(obj, name) {\n  const key = Object.keys(obj).find(\n    k => k.trim() === name\n  );\n  return key ? obj[key] : '';\n}\n\nreturn [{\n  json: {\n    quote_id: String(getValue(existing, 'quote_id')),\n    opportunity_id: String(getValue(existing, 'opportunity_id')),\n    lead_id: String(getValue(existing, 'lead_id')),\n    company_id: String(input.company_id || dna.company_id || ''),\n    session_id: String(getValue(existing, 'session_id')),\n    customer_name: String(input.customer_name || ''),\n    email: String(getValue(existing, 'email')),\n    requested_service: String(input.requested_service || '').trim(),\n\n    services: String(dna.services || '').trim(),\n    pricing: String(dna.pricing || '').trim(),\n    policies: String(dna.policies || '').trim(),\n    permissions: String(dna.permissions || '').trim()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        240
+      ],
+      "id": "a8512e96-ae0f-4035-93ab-86fde6b2a7b3",
+      "name": "Normalize Existing Quote"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Quote Agent').first().json.output \vert{}\vert{} '';\n\nconst match = raw.match(/\\{[\\s\\S]*\\}/);\n\nif (!match) {\n  throw new Error('No JSON object found in Quote Agent output');\n}\n\nlet jsonStr = match[0];\n\njsonStr = jsonStr.replace(/:\\s*\\$([0-9,.]+)/g, ': \"$$1\"');\njsonStr = jsonStr.replace(/,\\s*([}\\\\]])/g, '$1');\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr);\n} catch (e) {\n  const cleaned = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n}\n\nreturn [{\n  json: parsed\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        352
+      ],
+      "id": "5d68d5f0-2fab-48d1-993d-3a7ea0bdd53d",
+      "name": "Parse Quote Agent Output"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Accept Quote Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept Quote Request": {
+      "main": [
+        [
+          {
+            "node": "Validate Quote Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Validate Quote Request": {
+      "main": [
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Quote Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reject Quote Request": {
+      "main": [
+        [
+          {
+            "node": "Return Quote Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Quote": {
+      "main": [
+        [
+          {
+            "node": "Quote Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quote Exists?": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Quote",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Quote Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Quote": {
+      "main": [
+        [
+          {
+            "node": "Normalize Existing Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Quote Draft": {
+      "main": [
+        [
+          {
+            "node": "Validate Pricing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Pricing": {
+      "main": [
+        [
+          {
+            "node": "Pricing / Approval Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pricing / Approval Required?": {
+      "main": [
+        [
+          {
+            "node": "Create Quote Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quote Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Quote Approval": {
+      "main": [
+        [
+          {
+            "node": "Quote Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quote Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Quote Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Quote": {
+      "main": [
+        [
+          {
+            "node": "Log Quote Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Quote Activity": {
+      "main": [
+        [
+          {
+            "node": "Return Quote Result1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quote Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": []
+    },
+    "Normalize Existing Quote": {
+      "main": [
+        [
+          {
+            "node": "Validate Pricing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Quote Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Update Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fd5f4b13-027e-4128-b22d-b6e945b7c677",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "i9b11LQSlwjw8k87",
+  "tags": []
+}
