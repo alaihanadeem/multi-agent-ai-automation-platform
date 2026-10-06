@@ -1,0 +1,461 @@
+{
+  "name": "Review & Feedback subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Message: {{ $json.customer_message || $json.body?.customer_message || 'No message provided' }}",
+        "options": {
+          "systemMessage": "You are an SMB Customer Review & Feedback Agent.\n\nYour job is ONLY to analyze customer feedback.\n\nExtract:\n- rating\n- feedback\n- sentiment\n- category\n- issue\n- human_handoff\n\nRules:\n- Do not invent information.\n- If rating is not provided, use 0.\n- If information is unavailable, use an empty string \"\".\n- human_handoff must be true only when the customer reports a serious complaint, unresolved issue, or explicitly asks for human help.\n- sentiment must be one of: positive, neutral, negative.\n- category must be one of: praise, complaint, suggestion, service_quality, support_issue, general_feedback.\n\nReturn ONLY valid JSON:\n\n{\n  \"rating\": 0,\n  \"feedback\": \"\",\n  \"sentiment\": \"\",\n  \"category\": \"\",\n  \"issue\": \"\",\n  \"human_handoff\": false\n}\nYou are a Review & Feedback Agent. \nLook at the extracted sentiment and rating from the customer feedback:\n1. If sentiment is \"negative\" or rating <= 2: Apologize sincerely for the negative experience, address the specific issue mentioned, and assure them that support or management will look into it.\n2. If sentiment is \"positive\" or rating >= 4: Thank them warmly for their positive feedback.\n3. Keep the response professional, empathetic, and concise."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1072,
+        0
+      ],
+      "id": "77cbd4eb-0731-429f-924b-aa3f492eaea5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        208
+      ],
+      "id": "919ebb9b-0899-4327-81a2-97b855816de6",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output || $json.text || $json.response || $json.message;\n\nif (!raw) {\n  throw new Error('Feedback Agent returned empty output.');\n}\n\nlet feedback;\n\nif (typeof raw === 'string') {\n  let text = raw.replace(/```json|```/gi, '').trim();\n\n  const start = text.indexOf('{');\n  const end = text.lastIndexOf('}');\n\n  if (start === -1 || end === -1 || end <= start) {\n    feedback = {\n      rating: 0,\n      feedback: text,\n      sentiment: 'neutral',\n      category: 'general_feedback',\n      issue: text,\n      human_handoff: false\n    };\n  } else {\n    try {\n      feedback = JSON.parse(text.slice(start, end + 1));\n    } catch (error) {\n      feedback = {\n        rating: 0,\n        feedback: text,\n        sentiment: 'neutral',\n        category: 'general_feedback',\n        issue: text,\n        human_handoff: false\n      };\n    }\n  }\n} else if (typeof raw === 'object' && raw !== null) {\n  feedback = raw;\n} else {\n  feedback = {\n    rating: 0,\n    feedback: String(raw),\n    sentiment: 'neutral',\n    category: 'general_feedback',\n    issue: String(raw),\n    human_handoff: false\n  };\n}\n\nreturn [{\n  json: {\n    ...$json,\n    rating: Number(feedback.rating || 0),\n    feedback: String(feedback.feedback || '').trim(),\n    sentiment: String(feedback.sentiment || 'neutral').trim(),\n    category: String(feedback.category || 'general_feedback').trim(),\n    issue: String(feedback.issue || '').trim(),\n    human_handoff: feedback.human_handoff === true || String(feedback.human_handoff).toLowerCase() === 'true'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        0
+      ],
+      "id": "26c9628d-8548-457c-9810-be82a045dcb0",
+      "name": "Parse Feedback Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst execId = String($execution.id || Date.now());\n\nreturn [{\n  json: {\n    ...data, \n    \n    feedback_id: 'FB-' + execId,\n    company_id: String(data.company_id || 'COMP001').trim(),\n    session_id: String(data.session_id || 'SESS-' + execId).trim(),\n    \n    customer_name: String(data.customer_name || data.name || '').trim(),\n    email: String(data.email || '').trim(),\n    \n    rating: Number(data.rating || 0),\n    feedback: String(data.feedback || '').trim(),\n    sentiment: String(data.sentiment || 'neutral').trim(),\n    category: String(data.category || 'general_feedback').trim(),\n    issue: String(data.issue || '').trim(),\n    human_handoff: data.human_handoff === true,\n    \n    status: 'new',\n    created_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "0d71706a-a996-4950-ab21-718375d4e65f",
+      "name": "Prepare Feedback Record"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "KtaR7REuBTvkS9cR",
+          "mode": "list",
+          "cachedResultName": "customer feedback",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ $json.human_handoff }}",
+            "feedback_id": "={{ $json.feedback_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "feedback": "={{ $json.feedback }}",
+            "rating": "={{ $json.rating }}",
+            "sentiment": "={{ $json.sentiment }}",
+            "category": "={{ $json.category }}",
+            "issue": "={{ $json.issue }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "e58adc30-5f93-408c-9159-ade72521a195",
+      "name": "Save Feedback"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fc79cbd7-1de9-457b-b236-097db5e1cbf4",
+              "leftValue": "={{ $json.human_handoff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "116170ec-7930-4379-9c0c-892e46a6e65b",
+      "name": "Human Handoff?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bb260760-ff8b-4584-840c-1223b4d24aad",
+              "name": "status",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "d9465a45-88eb-400a-a02e-0b04fece00b1",
+              "name": "output",
+              "value": "=I’m sorry you’re experiencing an issue. I’ll connect you with a human team member who can help you further.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        128
+      ],
+      "id": "41c75587-2c05-4675-89a3-66c49d85af97",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "KtaR7REuBTvkS9cR",
+          "mode": "list",
+          "cachedResultName": "customer feedback",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "feedback_id",
+              "keyValue": "={{ $('Prepare Feedback Record').first().json.feedback_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ $('Handle Human Handoff').first().json.status === 'human_handoff' }}",
+            "status": "human_handoff"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        128
+      ],
+      "id": "e5e08686-f13d-4b49-827a-bbbbeee6fdb0",
+      "name": "Update Handoff Status"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "18f43883-a7b0-47fb-895e-2fed116ca85d",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        128
+      ],
+      "id": "5504b7c4-2f92-4c97-94a6-eddefddb2f0f",
+      "name": "Final Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53f9b1dd-a7b7-4ec8-8e4f-921fcfb7dd25",
+              "name": "output",
+              "value": "={{ $json.sentiment === 'negative' ? 'We are sorry to hear about your experience. We are taking your feedback seriously to improve our services.' : 'Thank you for your wonderful feedback! We are thrilled to hear you had a positive experience with us.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        720,
+        128
+      ],
+      "id": "ad550bed-9631-4772-aeca-0d485876b755",
+      "name": "Customer Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "18f43883-a7b0-47fb-895e-2fed116ca85d",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        592,
+        -160
+      ],
+      "id": "3f50bb6f-5285-4e7f-8bc5-f8c7b5c98772",
+      "name": "Final Response1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53f9b1dd-a7b7-4ec8-8e4f-921fcfb7dd25",
+              "name": "output",
+              "value": "={{ $json.sentiment === 'negative' ? 'We are truly sorry that your experience was unsatisfactory. Your issue has been escalated to our support team, and someone will contact you shortly.' : 'Thank you for sharing your feedback! We have noted your comments and appreciate your time.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        304,
+        -160
+      ],
+      "id": "c10c1144-40bf-4fe6-bbfd-69f3979fd01a",
+      "name": "Customer Response1"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1280,
+        16
+      ],
+      "id": "53e7da47-d2f9-4ef7-9d55-0c190d37aa5d",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Feedback Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Feedback Output": {
+      "main": [
+        [
+          {
+            "node": "Prepare Feedback Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Feedback Record": {
+      "main": [
+        [
+          {
+            "node": "Save Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Feedback": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Customer Response1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Update Handoff Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Handoff Status": {
+      "main": [
+        [
+          {
+            "node": "Customer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Response": {
+      "main": []
+    },
+    "Customer Response1": {
+      "main": [
+        [
+          {
+            "node": "Final Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3c0e7f0f-2e83-4850-8d91-160c1ce25c79",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "u6UwHL66fiUr7bLJ",
+  "tags": []
+}
