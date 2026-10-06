@@ -1,0 +1,2159 @@
+{
+  "name": "Sales Agent sybworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "lead_id"
+            },
+            {
+              "name": "company_id"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "phone"
+            },
+            {
+              "name": "requested_service"
+            },
+            {
+              "name": "region"
+            },
+            {
+              "name": "consent_to_contact",
+              "type": "boolean"
+            },
+            {
+              "name": "intent"
+            },
+            {
+              "name": "qualification_status"
+            },
+            {
+              "name": "lead_summary"
+            },
+            {
+              "name": "criteria"
+            },
+            {
+              "name": "chatInput"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -544,
+        -112
+      ],
+      "id": "7c894ce1-3311-44e4-b68f-6778b612f0f2",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dfc04338-3e88-4842-9648-22116631658d",
+              "name": "handoff_accepted",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "0aa508f3-19b1-4d40-b7dd-952d7f3141d6",
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "8ecb4600-d738-468b-b60a-f8d748c7ed8e",
+              "name": "company_id",
+              "value": "={{ $json.company_id }}",
+              "type": "string"
+            },
+            {
+              "id": "48a001c6-cb1b-42bf-b368-5e72fdf50b3f",
+              "name": "session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6c9fc520-14d1-4798-bc9e-9c503ea17b78",
+              "name": "customer_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "54b734bc-5118-419e-9d44-bc40cf61f7a0",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4ad7f11a-cf40-4028-954e-508d68aba0ba",
+              "name": "phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "623627ee-a38d-407c-b2b3-7dbcc632ad32",
+              "name": "requested_service",
+              "value": "={{ $json.requested_service }}",
+              "type": "string"
+            },
+            {
+              "id": "c624b3b1-5cbc-4da8-81b5-575932259e38",
+              "name": "region",
+              "value": "={{ $json.region }}",
+              "type": "string"
+            },
+            {
+              "id": "b483f50a-f134-4f5d-b085-b95fac24c5a1",
+              "name": "consent_to_contact",
+              "value": "={{ $json.consent_to_contact }}",
+              "type": "boolean"
+            },
+            {
+              "id": "33770691-e2bc-4001-8cae-aaca71b5392d",
+              "name": "intent",
+              "value": "={{ $json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "d2ea0c5a-70f3-49e6-b1a7-d769901b1da8",
+              "name": "qualification_status",
+              "value": "={{ $json.qualification_status }}",
+              "type": "string"
+            },
+            {
+              "id": "faf7cefd-6283-4340-b592-8d6c9041e3fe",
+              "name": "lead_summary",
+              "value": "={{ $json.lead_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "190b59de-735a-4c80-b73c-5c25d39c4eac",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -304,
+        -96
+      ],
+      "id": "f48e11d6-adec-42a1-87c4-2996b1aaf505",
+      "name": "Accept Sales Handoff"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "98916b9d-cae4-4fd2-ae9d-95db80f3ae55",
+              "leftValue": "={{ $json.qualification_status }}",
+              "rightValue": "disqualified",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "f32f57b6-77ed-446b-b897-efaafb435caf",
+              "leftValue": "={{ String($json.consent_to_contact).toLowerCase() === 'true' }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "10b387b9-7b61-4835-8c46-1f16add7a253",
+              "leftValue": "={{ $json.handoff_accepted  }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        -48
+      ],
+      "id": "716fd45f-9b57-4068-ad44-f1d6e3207426",
+      "name": "Validate Handoff"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "472cd957-fbcc-4e66-bbb1-e6060a10b0bc",
+              "name": "=handoff_accepted",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "a22fff92-3ff4-4430-bd93-27d466ea457a",
+              "name": "sales_status",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "374d9dd6-2e32-423b-897e-e50342c26fa4",
+              "name": "assistant_message",
+              "value": "Sales handoff cannot be accepted because the lead is not qualified or contact consent is missing.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        416,
+        80
+      ],
+      "id": "a19433b5-b4c3-45d1-9772-236ac91e1023",
+      "name": "Reject Sales Handoff"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{$json.company_id}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -96
+      ],
+      "id": "5428bb27-ce65-413f-bd95-91984e974aff",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        496,
+        -256
+      ],
+      "id": "b29caedc-f401-4450-8c53-1966368e556b",
+      "name": "Merge Lead and Company DNA"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_id",
+              "keyValue": "={{ $('Accept Sales Handoff').first().json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        -256
+      ],
+      "id": "c50735a2-751c-4edd-9065-21d1298b6fd7",
+      "name": "Find Sales Opportunity",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "741e445a-a89e-455b-86fd-59e744e76f99",
+              "leftValue": "={{ $json.opportunity_id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -256
+      ],
+      "id": "9205ed18-84ae-4e62-ab27-4a81600c9560",
+      "name": "Opportunity Exists?"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": "={{ false }}",
+            "appointment_requested": "={{ false }}",
+            "approval_required": "={{ false }}",
+            "opportunity_id": "=OPP-{{$now.toMillis()}}",
+            "lead_id": "={{ $('Accept Sales Handoff').first().json.lead_id }}",
+            "company_id": "={{ $('Accept Sales Handoff').first().json.company_id }}",
+            "session_id": "={{ $('Accept Sales Handoff').first().json.session_id }}",
+            "customer_name": "={{ $('Accept Sales Handoff').first().json.customer_name }}",
+            "email": "={{ $('Accept Sales Handoff').first().json.email }}",
+            "phone": "={{ $('Accept Sales Handoff').first().json.phone }}",
+            "requested_service": "={{ $('Accept Sales Handoff').first().json.requested_service }}",
+            "consent_to_contact": "={{ $('Accept Sales Handoff').first().json.consent_to_contact }}",
+            "created_at": "={{$now.toISO()}}",
+            "updated_at": "={{$now.toISO()}}",
+            "approval_status": "not_required",
+            "next_step_status": "pending",
+            "opportunity_stage": "new"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        -160
+      ],
+      "id": "62dfe771-7af8-4a30-94b6-ceea30ac9ab5",
+      "name": "Create Sales Opportunity"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2a093180-4c09-4bfa-bbf4-1eb90cd48f14",
+              "name": "opportunity_id",
+              "value": "={{$json.opportunity_id}}",
+              "type": "string"
+            },
+            {
+              "id": "70521905-6075-4f64-b097-b0cb45b219e9",
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a603e7cb-4f48-406c-8474-3304e3173aa2",
+              "name": "company_id",
+              "value": "={{ $json.company_id }}",
+              "type": "string"
+            },
+            {
+              "id": "09e951fd-bad3-4729-9b15-012d3a5a3c5f",
+              "name": "session_id",
+              "value": "={{ $('Accept Sales Handoff').first().json.session_id }}\n",
+              "type": "string"
+            },
+            {
+              "id": "2a17a8c6-33c8-4353-b803-dbd41ddfd598",
+              "name": "customer_name",
+              "value": "={{ $('Accept Sales Handoff').first().json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "1837809a-4cc9-4a61-9e7b-2ecea6ec028d",
+              "name": "email",
+              "value": "={{ $('Accept Sales Handoff').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "234848de-8ec7-4ae1-a7ee-22750309842d",
+              "name": "phone",
+              "value": "={{ $('Accept Sales Handoff').first().json.phone }}\n",
+              "type": "string"
+            },
+            {
+              "id": "e5bf885e-cf94-4c47-b43b-291075bcdcff",
+              "name": "requested_service",
+              "value": "={{ $json.requested_service }}",
+              "type": "string"
+            },
+            {
+              "id": "193b851a-bcb8-451a-9ec1-347e706073aa",
+              "name": "consent_to_contact",
+              "value": "={{ $('Accept Sales Handoff').first().json.consent_to_contact }}",
+              "type": "string"
+            },
+            {
+              "id": "a82559fe-8e49-40fd-97c8-fc886c0e7dcd",
+              "name": "opportunity_stage",
+              "value": "=new",
+              "type": "string"
+            },
+            {
+              "id": "9ee7925f-b2ed-4262-87bd-410c5cd3ceea",
+              "name": "approval_required",
+              "value": "={{ false }}",
+              "type": "string"
+            },
+            {
+              "id": "cf0d735b-31fe-4730-a18b-d1160520a605",
+              "name": "appointment_requested",
+              "value": "={{ false }}",
+              "type": "string"
+            },
+            {
+              "id": "6eb837a8-718d-4d4b-a101-125b83d13a4d",
+              "name": "quote_requested",
+              "value": "={{ false }}",
+              "type": "string"
+            },
+            {
+              "id": "e2b1e6ed-4000-45ad-884f-3a8f530731b4",
+              "name": "updated_at",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "5fa40249-e268-450b-8549-85b212961dc8",
+              "name": "created_at",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "9d94ce8f-2982-474f-91fa-15090d62fca2",
+              "name": "approval_status",
+              "value": "pending",
+              "type": "string"
+            },
+            {
+              "id": "cae2954a-e72e-476a-b242-60753ae05659",
+              "name": "next_step_status",
+              "value": "pending",
+              "type": "string"
+            },
+            {
+              "id": "b190b2ef-01e0-48c3-976d-dfd2177f1ae5",
+              "name": "next_step",
+              "value": "qualify_opportunity",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1536,
+        -272
+      ],
+      "id": "3b59d8c5-dac4-4f05-9b3a-c3eea9f37025",
+      "name": "Prepare Opportunity"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst requestedService = String(input.requested_service || '').trim();\n\nconst fit =\n  requestedService.toLowerCase() === 'cloud security assessment';\n\nreturn [{\n  json: {\n    opportunity_id: input.opportunity_id || '',\n    lead_id: input.lead_id || '',\n    company_id: input.company_id || '',\n    session_id: input.session_id || '',\n    customer_name: input.customer_name || '',\n    email: input.email || '',\n    phone: input.phone || '',\n    requested_service: requestedService,\n    consent_to_contact: input.consent_to_contact || false,\n    opportunity_stage: input.opportunity_stage || '',\n    approval_required: input.approval_required || false,\n    appointment_requested: input.appointment_requested || false,\n    quote_requested: input.quote_requested || false,\n    updated_at: input.updated_at || '',\n    created_at: input.created_at || '',\n    approval_status: input.approval_status || '',\n    next_step_status: input.next_step_status || '',\n    next_step: input.next_step || '',\n\n    fit: fit,\n\n    fit_reason: fit\n      ? 'Requested service matches a company service.'\n      : 'Requested service does not match available company services.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -272
+      ],
+      "id": "1ff56ba7-2572-46e9-a5da-b828431b24db",
+      "name": "Verify Fit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a06358b4-9793-4ee0-afd1-86e02e1d3312",
+              "name": "opportunity_id",
+              "value": "={{ $json.opportunity_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a46eece6-54f7-4694-968f-f58ef5da598d",
+              "name": "company_id",
+              "value": "={{ $json.company_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5ea8673b-1e55-42a8-9817-6ae0647134ed",
+              "name": "opportunity_stage",
+              "value": "={{ $json.opportunity_stage }}",
+              "type": "string"
+            },
+            {
+              "id": "babf5d12-1f08-4bd8-a87f-33419effecc0",
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "96d26700-bcc6-4660-a687-6127969e9186",
+              "name": "next_step",
+              "value": "={{ $json.next_step }}",
+              "type": "string"
+            },
+            {
+              "id": "d6ab7b86-1c1d-454a-95b7-5374ddc8d22c",
+              "name": "requested_service",
+              "value": "={{ $json.requested_service }}",
+              "type": "string"
+            },
+            {
+              "id": "839cd58f-55e3-4844-bc93-dad532110f8f",
+              "name": "source",
+              "value": "={{ $json.source || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "e0c5f934-bbdd-4fb4-8cf6-9a488f09ec4b",
+              "name": "campaign",
+              "value": "={{ $json.campaign || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1312,
+        -368
+      ],
+      "id": "0808d289-3410-4f1d-9682-3e4f2d7c7002",
+      "name": "Use Existing Opportunity"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4e937d5e-0391-4c04-bdd0-7614cffc1c29",
+              "leftValue": "={{ $json.fit }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1936,
+        -272
+      ],
+      "id": "0543ec60-2cb4-4799-ac9d-e9f0e6343522",
+      "name": "Fit Valid?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Company / Opportunity Context:\n\n{{ JSON.stringify($('When Executed by Another Workflow').first().json) }}\n\nUse the above opportunity data together with the Company DNA available to this agent.",
+        "options": {
+          "systemMessage": "You are the Sales Agent for the company.\n\nThe lead has already been captured, qualified, and confirmed. Do not repeat lead capture, qualification, consent, or confirmation.\n\nUse ONLY the provided Company DNA, lead context, and opportunity context. Never invent services, products, features, pricing, discounts, guarantees, availability, timelines, ROI, or capabilities.\n\nSALES RULES:\n\n1. If the requested service exists in Company DNA:\n\n   * matched_solution = exact service name from Company DNA\n   * human_handoff = false\n   * use only facts explicitly provided by Company DNA\n\n2. If the requested service/capability is NOT in Company DNA:\n\n   * matched_solution = \"\"\n   * human_handoff = true\n   * next_step = \"human_handoff\"\n\n3. Customer interest alone is NOT a quote request.\n\n   * Interest in a service → next_step = \"follow_up\"\n   * Explicit quote/price/proposal request → next_step = \"request_quote\"\n   * Explicit appointment request → next_step = \"request_appointment\"\n   * Wants to continue later → next_step = \"follow_up\" or \"nurture\"\n   * Explicitly ends the process → next_step = \"close_lost\"\n   * Successfully completed sale → next_step = \"close_won\"\n\n4. Never invent pain points, decision criteria, stakeholders, or objections. If unknown, use \"\".\n\n5. If a request needs human authorization or cannot be safely handled with Company DNA:\n\n   * human_handoff = true\n   * next_step = \"human_handoff\"\n\n6. Never provide a final quote, unauthorized discount, unsupported commitment, or unsupported commercial claim.\n\nOUTPUT:\n\nReturn ONLY one valid JSON object with exactly these 14 fields:\n\n{\n\"intent\": \"\",\n\"business_need\": \"\",\n\"pain_points\": \"\",\n\"decision_criteria\": \"\",\n\"stakeholders\": \"\",\n\"matched_solution\": \"\",\n\"objection_type\": \"\",\n\"objection_response\": \"\",\n\"next_step\": \"\",\n\"reason\": \"\",\n\"approval_required\": false,\n\"human_handoff\": false,\n\"evidence_used\": \"\",\n\"assistant_message\": \"\"\n}\n\nRules:\n\n* Never use null.\n* Never omit fields.\n* Never add fields.\n* No Markdown.\n* No ```json.\n* No text outside the JSON.\n* Boolean fields MUST be true/false, not strings.\n* next_step MUST be exactly:\n  \"request_quote\", \"request_appointment\", \"follow_up\", \"human_handoff\", \"nurture\", \"close_won\", or \"close_lost\".\n\nFor an approved Company DNA service, customer interest must NOT be treated as a quote request unless the customer explicitly asks for a quote, price, cost, or proposal.\nIMPORTANT FIELD RULES:\n\n- intent must use \"purchase_intent\" for customer interest in buying/using a company service.\n- stakeholders means actual people/roles involved in the decision (for example: IT Manager, Security Team). Employee count is NOT a stakeholder. If no stakeholder is provided, use \"\".\n- reason must explain the next_step briefly.\n- evidence_used must be \"Company DNA\" whenever the matched_solution comes from Company DNA.\n- assistant_message must always be included.\n- Never put employee counts, company size, or business details into stakeholders.\nFINAL OUTPUT ENFORCEMENT:\n\nReturn exactly ONE JSON object and nothing else.\n\nThe \"assistant_message\" MUST be a field inside that same JSON object.\n\nNEVER output:\n- assistant:\n- assistant|\n- any text after the JSON\n- any text before the JSON\n- Markdown\n- code fences\n\nBefore returning the response, verify:\n1. Exactly 14 fields exist.\n2. All 14 fields are present.\n3. \"assistant_message\" is present inside the JSON.\n4. No text exists outside the JSON.\n5. Boolean fields are true/false.\n6. If customer only expresses interest, next_step = \"follow_up\".\n7. If customer explicitly asks for price, cost, quote, or proposal, next_step = \"request_quote\".\nThe ONLY valid response is a JSON object.\n\nassistant_message MUST be inside the JSON object.\n\nExample:\n\n{\n  \"intent\": \"purchase_intent\",\n  \"business_need\": \"improve cloud security\",\n  \"pain_points\": \"\",\n  \"decision_criteria\": \"\",\n  \"stakeholders\": \"\",\n  \"matched_solution\": \"Cloud Security Assessment\",\n  \"objection_type\": \"\",\n  \"objection_response\": \"\",\n  \"next_step\": \"follow_up\",\n  \"reason\": \"Customer expressed interest in an approved company service.\",\n  \"approval_required\": false,\n  \"human_handoff\": false,\n  \"evidence_used\": \"Company DNA\",\n  \"assistant_message\": \"Cloud Security Assessment is available. We can discuss your requirements and the next steps.\"\n}\n\nDo not output anything outside this JSON object.\nUNSUPPORTED SERVICE RULE:\nIf the customer's requested service does NOT exactly match an approved service in Company DNA:\n- matched_solution must be \"\"\n- next_step must be \"human_handoff\"\n- human_handoff must be true\n- approval_required must be false\n- reason must explain that the requested service is not listed in Company DNA\n- Do not suggest, invent, or offer a custom solution\n\nCRITICAL RULE: Never repeat any sentence, paragraph, or phrase. Stop generating immediately once the answer is complete."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2400,
+        -448
+      ],
+      "id": "4368c0b0-1762-48fb-bb50-c2b0642f2feb",
+      "name": "Sales agent"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Verify Fit').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": "={{ $json.next_step === 'request_quote' }}",
+            "appointment_requested": "={{ $json.next_step === 'request_appointment' }}",
+            "approval_required": "={{ $json.approval_required }}",
+            "consent_to_contact": false,
+            "business_need": "={{ $json.business_need }}",
+            "pain_points": "={{ $json.pain_points }}",
+            "decision_criteria": "={{ $json.decision_criteria }}",
+            "stakeholders": "={{ $json.stakeholders }}",
+            "matched_solution": "={{ $json.matched_solution }}",
+            "objections": "={{ $json.objection_type }}",
+            "objection_response": "={{ $json.objection_response }}",
+            "next_step_status": "pending",
+            "updated_at": "={{ $now.toISO() }}",
+            "next_step": "={{ $json.next_step }}",
+            "opportunity_stage": "qualified"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3104,
+        -448
+      ],
+      "id": "509b813f-1c2d-4c56-8bd6-cd43e0b06c9e",
+      "name": "Update Sales Opportunity"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "ujlFPXpUZZCITBf4",
+          "mode": "list",
+          "cachedResultName": "Sales Activities",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "activity_id": "=ACT-{{$now.toMillis()}}",
+            "opportunity_id": "={{$json.opportunity_id}}",
+            "lead_id": "={{$json.lead_id}}",
+            "company_id": "={{$json.company_id}}",
+            "session_id": "={{$json.session_id}}",
+            "customer_message": "={{ $('Parse Sales Output').first().json.chatInput }}\n",
+            "agent_response": "={{ $('Parse Sales Output').first().json.assistant_message }}\n",
+            "decision": "={{$json.next_step}}",
+            "evidence_used": "={{ $('Parse Sales Output').first().json.evidence_used }}",
+            "created_at": "={{$now.toISO()}}",
+            "activity_type": "={{ $('Parse Sales Output').first().json.intent }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3280,
+        -448
+      ],
+      "id": "bef2014c-ae3e-4cdf-a97b-6dca2eaf3251",
+      "name": "Log Sales Activity"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d7d6334d-bc45-488a-be6a-6999b81eb0e5",
+              "leftValue": "={{ String($json.consent_to_contact).toLowerCase() === 'true' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3680,
+        -448
+      ],
+      "id": "a3c19564-624f-4bed-823f-0a451139ceb2",
+      "name": "Human Handoff?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "07ed2fa2-9915-448b-8621-bd7c01536632",
+              "leftValue": "={{ $json.approval_required }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3856,
+        -336
+      ],
+      "id": "de03aef9-ba87-4a6a-9e9d-cfa8fbdc8d60",
+      "name": "Approval Required?"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "1nikd0TmpjkTnZH1",
+          "mode": "list",
+          "cachedResultName": "Sales Approvals",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "approval_id": "=APR-{{$now.toMillis()}}",
+            "company_id": "={{$json.company_id}}",
+            "opportunity_id": "={{$json.opportunity_id}}",
+            "approval_type": "={{$json.next_step}}",
+            "requested_action": "={{$json.reason}}",
+            "requested_by": "Sales Agent",
+            "status": "pending",
+            "created_at": "={{$now.toISO()}}",
+            "updated_at": "={{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4144,
+        -480
+      ],
+      "id": "aaf17db4-e7ea-4135-8d18-e8e4953a958e",
+      "name": "Create Sales Approval"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "request_quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4d48902a-8d8f-4c94-a2f0-04443d5a8cb2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "request_quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b8164ffb-f44b-4c90-a95c-215398f81851",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "request_appointment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "request_appointment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "13ffb145-26ea-48cb-a232-0e4a05dabb59",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "follow_up",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "follow_up"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c83dd368-ce43-4e97-871e-b6cd9c0c3751",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "nurture",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nurture"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9249e4df-4b09-4ee4-b8cd-83a00e54157e",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "close_won",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "close_won"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9ade74bf-89fa-4434-9b0b-693c15d8df53",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "close_lost",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "close_lost"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "69131b85-a2f1-4cb9-b9e2-3d4b7a2a2775",
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "human_handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "human_handoff"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4352,
+        -416
+      ],
+      "id": "6b7fab66-88c3-43a6-9ec6-792f281e7d7e",
+      "name": "Sales Next Step"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2af88af5-d38f-423d-b816-b31c73ab39f0",
+              "name": "=opportunity_id   ",
+              "value": "={{$json.opportunity_id}}",
+              "type": "string"
+            },
+            {
+              "id": "5c19f90b-77a0-4cdb-920c-b0c08c5049da",
+              "name": "=next_step",
+              "value": "={{ $('Parse Sales Output').first().json.next_step }}",
+              "type": "string"
+            },
+            {
+              "id": "9e97ffaf-60ba-4c50-8386-19de7f36003e",
+              "name": "=opportunity_stage",
+              "value": "={{ $('Parse Sales Output').first().json.next_step === 'close_won'\n  ? 'won'\n  : $('Parse Sales Output').first().json.next_step === 'close_lost'\n  ? 'lost'\n  : 'in_progress' }}",
+              "type": "string"
+            },
+            {
+              "id": "6de301da-97dc-42d6-bf9c-eafbd3608964",
+              "name": "=assistant_message",
+              "value": "={{ $('Parse Sales Output').first().json.assistant_message }}",
+              "type": "string"
+            },
+            {
+              "id": "53b746df-db50-4d41-94c6-e35ac4f861c7",
+              "name": "=human_handoff",
+              "value": "={{ $('Parse Sales Output').first().json.human_handoff === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "1557a1e4-a93d-48fd-be93-c331c4cc03d9",
+              "name": "=approval_required",
+              "value": "={{ $('Parse Sales Output').first().json.approval_required === true }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        5344,
+        -224
+      ],
+      "id": "2b1b93b7-08ee-420e-9473-8363184f7201",
+      "name": "Return Sales Result"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "yoVlUDKKgzu2beUd",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Booking AGent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $('Accept Sales Handoff').first().json.phone }}",
+            "customer_message": "={{ $('When Executed by Another Workflow').first().json.criteria }}",
+            "session_id": "={{ $('When Executed by Another Workflow').first().json.session_id }}",
+            "company_id": "={{ $('When Executed by Another Workflow').first().json.company_id }}",
+            "lead_id": "={{ $('When Executed by Another Workflow').first().json.lead_id }}",
+            "customer_name": "={{ $('When Executed by Another Workflow').first().json.customer_name }}",
+            "email": "={{ $('When Executed by Another Workflow').first().json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4624,
+        -592
+      ],
+      "id": "eeaa7788-5a42-41e5-acde-50feff414508",
+      "name": "Appointment Booking"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "i9b11LQSlwjw8k87",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Quote & Proposal Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "opportunity_id": "={{$json.opportunity_id}}",
+            "company_id": "={{$json.company_id}}",
+            "lead_id": "={{$json.lead_id}}",
+            "session_id": "={{ $('Accept Sales Handoff').first().json.session_id }}",
+            "customer_name": "={{ $('Accept Sales Handoff').first().json.customer_name }}",
+            "email": "={{ $('Accept Sales Handoff').first().json.email }}",
+            "requested_service": "={{ $('Accept Sales Handoff').first().json.requested_service }}",
+            "matched_solution": "={{ $('Parse Sales Output').first().json.matched_solution }}",
+            "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
+            "next_step": "={{$json.next_step}}",
+            "customer_message": "={{ $('When Executed by Another Workflow').first().json.criteria }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4624,
+        -752
+      ],
+      "id": "1ee7a83b-f319-4c11-b279-b025de322c8d",
+      "name": "Quote & Proposal"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Parse Sales Output').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": false,
+            "appointment_requested": false,
+            "approval_required": false,
+            "consent_to_contact": false,
+            "opportunity_stage": "{{ $('Parse Sales Output').first().json.next_step === 'close_won' ? 'won' : $('Parse Sales Output').first().json.next_step === 'close_lost' ? 'lost' : 'in_progress' }}",
+            "next_step": "{{ $('Parse Sales Output').first().json.next_step }}",
+            "next_step_status": "pending",
+            "updated_at": "={{ $now.toISO() }}",
+            "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
+            "pain_points": "={{ $('Parse Sales Output').first().json.pain_points }}",
+            "decision_criteria": "={{ $('Parse Sales Output').first().json.decision_criteria }}",
+            "stakeholders": "={{ $('Parse Sales Output').first().json.stakeholders }}",
+            "matched_solution": "={{ $('Parse Sales Output').first().json.matched_solution }}",
+            "objections": "={{ $('Parse Sales Output').first().json.objection_type }}",
+            "objection_response": "={{ $('Parse Sales Output').first().json.objection_response }}",
+            "approval_status": "={{ $('Parse Sales Output').first().json.approval_required === true ? 'pending' : 'not_required' }}",
+            "phone": "={{ $('When Executed by Another Workflow').first().json.phone }}",
+            "session_id": "={{ $('When Executed by Another Workflow').first().json.session_id }}",
+            "lead_id": "={{ $('When Executed by Another Workflow').first().json.lead_id }}",
+            "email": "={{ $('When Executed by Another Workflow').first().json.email }}",
+            "customer_name": "={{ $('When Executed by Another Workflow').first().json.customer_name }}",
+            "opportunity_id": "={{$json.opportunity_id}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4624,
+        -128
+      ],
+      "id": "354793f7-bdd1-4133-a47e-d67f7551c1db",
+      "name": "sales opportunity"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7fe94ced-5235-4094-885f-f07506662255",
+              "name": "human_handoff ",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "c96e45aa-6f10-451d-897c-8718b1ed3ea5",
+              "name": "handoff_reason",
+              "value": "= {{ $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "2c92ee02-08b5-432d-9a77-acb13c509d2e",
+              "name": "assistant_message ",
+              "value": "A human sales representative will assist you with this request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3856,
+        -720
+      ],
+      "id": "daf0d33d-aa48-4c55-9cad-11f33219e59f",
+      "name": "Handle Human Handoff1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Prepare Sales Routing').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": false,
+            "appointment_requested": false,
+            "approval_required": false,
+            "consent_to_contact": false,
+            "next_step_status": "pending",
+            "updated_at": "={{ $now.toISO() }}",
+            "next_step": "nurture",
+            "opportunity_stage": "nurture"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4624,
+        -288
+      ],
+      "id": "91d61168-da3a-4c6b-b268-d22f20d27fa0",
+      "name": "Update Opportunity Nurture"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Parse Sales Output').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": "={{ $('Parse Sales Output').first().json.next_step === 'request_quote' }}",
+            "appointment_requested": "={{ $('Parse Sales Output').first().json.next_step === 'request_appointment' }}",
+            "approval_required": "={{ $('Parse Sales Output').first().json.approval_required === true }}",
+            "consent_to_contact": false,
+            "opportunity_stage": "{{ $('Parse Sales Output').first().json.next_step === 'close_won' ? 'won' : $('Parse Sales Output').first().json.next_step === 'close_lost' ? 'lost' : 'in_progress' }}",
+            "next_step": "{{ $('Parse Sales Output').first().json.next_step }}",
+            "next_step_status": "pending",
+            "updated_at": "={{ $now.toISO() }}",
+            "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
+            "pain_points": "={{ $('Parse Sales Output').first().json.pain_points }}",
+            "decision_criteria": "={{ $('Parse Sales Output').first().json.decision_criteria }}",
+            "stakeholders": "={{ $('Parse Sales Output').first().json.stakeholders }}",
+            "matched_solution": "={{ $('Parse Sales Output').first().json.matched_solution }}",
+            "objections": "={{ $('Parse Sales Output').first().json.objection_type }}",
+            "objection_response": "={{ $('Parse Sales Output').first().json.objection_response }}",
+            "approval_status": "={{ $('Parse Sales Output').first().json.approval_required === true ? 'pending' : 'not_required' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4624,
+        -128
+      ],
+      "id": "c2aeb5a9-949d-4cf8-9c91-e9050bea6b40",
+      "name": "Update Opportunity Won"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $('Prepare Sales Routing').first().json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "quote_requested": false,
+            "appointment_requested": false,
+            "approval_required": false,
+            "consent_to_contact": false,
+            "opportunity_stage": "lost",
+            "next_step": "close_lost",
+            "next_step_status": "completed",
+            "loss_reason": "={{ $('Parse Sales Output').first().json.reason }}\n",
+            "updated_at": "={{ $now.toISO() }}",
+            "approval_status": "not_required"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4624,
+        16
+      ],
+      "id": "e86e1f57-7a42-48b2-98f5-733592e64235",
+      "name": "Update Opportunity Lost"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 2048
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        -256
+      ],
+      "id": "2121268f-61c3-400e-ac51-35dedc90b216",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When Executed by Another Workflow').first().json.session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2496,
+        -144
+      ],
+      "id": "48c556a3-6921-4140-9740-f5c10b376027",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sales = $json || {};\n\nfunction getUpstreamValue(nodeName, key) {\n  try {\n    const item = $(nodeName).first().json;\n    return String(item[key] || '').trim();\n  } catch (e) {\n    return '';\n  }\n}\n\nreturn [{\n  json: {\n    opportunity_id: getUpstreamValue('Verify Fit', 'opportunity_id'),\n    lead_id: getUpstreamValue('Verify Fit', 'lead_id'),\n    company_id: getUpstreamValue('Verify Fit', 'company_id') || String($json.company_id || 'COMP001'),\n    session_id: getUpstreamValue('Verify Fit', 'session_id') || String($json.session_id || ''),\n    customer_name: getUpstreamValue('Verify Fit', 'customer_name'),\n    email: getUpstreamValue('Verify Fit', 'email'),\n    phone: getUpstreamValue('Verify Fit', 'phone'),\n    requested_service: getUpstreamValue('Verify Fit', 'requested_service') || 'Cloud Security Assessment',\n\n    intent: sales.intent || 'sales',\n    business_need: sales.business_need || '',\n    pain_points: sales.pain_points || '',\n    decision_criteria: sales.decision_criteria || '',\n    stakeholders: sales.stakeholders || '',\n    matched_solution: sales.matched_solution || '',\n    objection_type: sales.objection_type || '',\n    objection_response: sales.objection_response || '',\n    next_step: sales.next_step || 'follow_up',\n    reason: sales.reason || '',\n    approval_required: Boolean(sales.approval_required),\n    human_handoff: Boolean(sales.human_handoff),\n    evidence_used: sales.evidence_used || '',\n    assistant_message: sales.assistant_message || 'Sales inquiry processed successfully.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        -448
+      ],
+      "id": "acfa18d7-a29c-40ae-8c53-527d9ed51bde",
+      "name": "Parse Sales Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sales = $('Parse Sales Output').first().json;\n\nreturn [{\n  json: {\n    opportunity_id: sales.opportunity_id,\n    lead_id: sales.lead_id,\n    company_id: sales.company_id,\n    chatInput: sales.chatInput,\n\n    intent: sales.intent,\n    next_step: sales.next_step,\n    approval_required: sales.approval_required === true,\n    human_handoff: sales.human_handoff === true,\n    assistant_message: sales.assistant_message,\n    evidence_used: sales.evidence_used\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        -448
+      ],
+      "id": "cb406c3c-8a65-4e1e-901b-4e7babacdae1",
+      "name": "Prepare Sales Routing"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = '';\n\ntry {\n  const item = $('Sales agent').first().json;\n  raw = item.output || item.text || item.response || item.message || JSON.stringify(item);\n} catch (e) {\n  raw = $json.output || $json.text || $json.response || '';\n}\n\nlet text = String(raw || '').trim();\n\ntext = text\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nconst match = text.match(/\\{[\\s\\S]*\\}/);\n\nlet sales = {};\n\nif (match) {\n  try {\n    sales = JSON.parse(match[0]);\n  } catch (error) {\n    sales = { assistant_message: text };\n  }\n} else {\n  sales = {\n    assistant_message: text || \"Sales request processed successfully.\"\n  };\n}\n\nsales.intent = sales.intent || 'sales';\nsales.business_need = sales.business_need || '';\nsales.pain_points = sales.pain_points || '';\nsales.decision_criteria = sales.decision_criteria || '';\nsales.stakeholders = sales.stakeholders || '';\nsales.matched_solution = sales.matched_solution || '';\nsales.objection_type = sales.objection_type || '';\nsales.objection_response = sales.objection_response || '';\nsales.next_step = sales.next_step || 'follow_up';\nsales.reason = sales.reason || '';\nsales.approval_required = Boolean(sales.approval_required);\nsales.human_handoff = Boolean(sales.human_handoff);\nsales.evidence_used = sales.evidence_used || '';\nsales.assistant_message = sales.assistant_message || 'Sales inquiry processed.';\n\nreturn [{ json: sales }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -448
+      ],
+      "id": "7e092a15-d80a-4306-9131-6bed6f032ed4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28e760d5-e07c-4e17-9ac3-23c39af15b08",
+              "name": "human_handoff",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "4f29e8c2-a184-4464-86fc-1aa1c4dd4ffc",
+              "name": "assistant_message",
+              "value": "Your request requires assistance from our sales team. A team member will help you with the next steps.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        4640,
+        160
+      ],
+      "id": "9d22b72e-697a-4da8-8b98-50f5eaa41679",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db96299e-5b37-40a5-98b9-d552fe31d1f7",
+              "name": "opportunity_id",
+              "value": "={{ $json.opportunity_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b5a2ae08-c741-4f62-8515-fedfbf7487ec",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fda97b1c-2b7a-46e0-af46-64fc93b807cd",
+              "name": "requested_service",
+              "value": "={{ $json.requested_service }}",
+              "type": "string"
+            },
+            {
+              "id": "e84546af-7d33-44a4-aa43-0240d7846485",
+              "name": "human_handoff",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "64001695-4101-4c13-8656-6c349d3ababf",
+              "name": "next_step",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "188f69a9-ae3f-41c9-bdff-161d850962d9",
+              "name": "approval_required",
+              "value": "false",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2128,
+        -96
+      ],
+      "id": "41e430ef-bff5-4478-851c-eab49f34e2fb",
+      "name": "Handle Human Handoff2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opportunity_id",
+              "keyValue": "={{ $json.opportunity_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "opportunity_stage": "in_progress",
+            "loss_reason": "Not a fit for available company services",
+            "updated_at": "={{$now.toISO()}}",
+            "approval_required": "=false"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        0
+      ],
+      "id": "1a8d7d86-efd1-4734-95d9-36bf78186acf",
+      "name": "Update Opportunity"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "11605047-c24c-47be-ab0a-0f8abeadf899",
+              "name": "opportunity_id",
+              "value": "={{ $json.opportunity_id }}",
+              "type": "string"
+            },
+            {
+              "id": "afdfea34-372c-4967-9677-81d99308fe5b",
+              "name": "next_step",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "c3a591ff-c456-407a-a4cf-06a2c745327e",
+              "name": "opportunity_stage",
+              "value": "in_progress",
+              "type": "string"
+            },
+            {
+              "id": "3595ff6f-3177-4147-913e-d169cf9ad8b2",
+              "name": "assistant_message",
+              "value": "={{ \"Hello \" + ($json.customer_name || \"there\") + \", \" + ($json.requested_service || \"your requested service\") + \" is not currently listed among our available services. I’ll route your request to a team member who can assist you.\" }}",
+              "type": "string"
+            },
+            {
+              "id": "243f8249-603b-4d60-bea2-56160f4dc8c7",
+              "name": "human_handoff",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "c8e878fb-ba84-4d98-aa10-f09c49acc6d1",
+              "name": "approval_required",
+              "value": "false",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2592,
+        0
+      ],
+      "id": "4b0f9e19-44a5-48ba-8379-6b02891f3625",
+      "name": "Human Handoff Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "06e6b5ba-088d-4b18-831d-3e2c52744a20",
+              "name": "=opportunity_stage",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "ac6e75d2-ebfd-4b80-98da-de855ec20aa2",
+              "name": "next_step",
+              "value": "collect_lead_info",
+              "type": "string"
+            },
+            {
+              "id": "b40501eb-ec6b-4f43-9f76-6f62818f81db",
+              "name": "human_handoff",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "94ea6cc4-c1cb-4b42-901f-edb31e660706",
+              "name": "approval_required",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "fdc95aae-3726-4910-8e8f-df251e44d038",
+              "name": "assistant_message",
+              "value": "=Lead details are incomplete or not qualified for a sales handoff. Please provide a valid email and name.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        640,
+        80
+      ],
+      "id": "9827704b-32c9-4411-9229-66a869400b6f",
+      "name": "Return Rejected Handoff"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Accept Sales Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept Sales Handoff": {
+      "main": [
+        [
+          {
+            "node": "Merge Lead and Company DNA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Validate Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Handoff": {
+      "main": [
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Sales Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Merge Lead and Company DNA",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Lead and Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Find Sales Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Sales Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Opportunity Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opportunity Exists?": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Sales Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sales Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Prepare Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Verify Fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Prepare Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Fit": {
+      "main": [
+        [
+          {
+            "node": "Fit Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fit Valid?": {
+      "main": [
+        [
+          {
+            "node": "Sales agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Human Handoff2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sales agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sales Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Log Sales Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sales Activity": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sales Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Handle Human Handoff1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Approval Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Required?": {
+      "main": [
+        [
+          {
+            "node": "Create Sales Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sales Next Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sales Approval": {
+      "main": []
+    },
+    "Sales Next Step": {
+      "main": [
+        [
+          {
+            "node": "Quote & Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Appointment Booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "sales opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Opportunity Nurture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Opportunity Won",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Opportunity Lost",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quote & Proposal": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appointment Booking": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sales opportunity": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Opportunity Won": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Opportunity Nurture": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sales agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Sales agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Opportunity Lost": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Sales Output": {
+      "main": [
+        [
+          {
+            "node": "Update Sales Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sales Routing": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Parse Sales Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff2": {
+      "main": [
+        [
+          {
+            "node": "Update Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff Response": {
+      "main": []
+    },
+    "Reject Sales Handoff": {
+      "main": [
+        [
+          {
+            "node": "Return Rejected Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff1": {
+      "main": []
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1797666e-cb33-4fc6-beea-758f7d3417c2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "UtGFb96PPXhDIN10",
+  "tags": []
+}
