@@ -1,0 +1,1486 @@
+{
+  "name": "Marketing Campaign subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id || $('When Executed by Another Workflow').first()?.json?.company_id || 'COMP001' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        0
+      ],
+      "id": "8c878e5c-74af-4e56-b930-7b6e962d379e",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer request:\n{{ $json.user_message || $json.customer_message || $json.chatInput || $('When Executed by Another Workflow').first()?.json?.user_message || '' }}\n\nCompany DNA:\n{{ JSON.stringify($json.company_dna || $('Get Company DNA').first()?.json || {}) }}\n\nClient Details:\n- Customer Name: {{ $('When Executed by Another Workflow').first()?.json?.customer_name || 'Valued Client' }}\n- Requested Service: {{ $('When Executed by Another Workflow').first()?.json?.requested_service || 'Cybersecurity Solutions' }}",
+        "options": {
+          "systemMessage": "You are an expert SMB Marketing Campaign Agent.\n\nCRITICAL DIRECTIVE ON TRUTH:\n- Use Company DNA values ONLY if explicitly needed. For campaign content, focus on the user's requested topic (e.g., continuous penetration testing, autumn promo, etc.) professionally.\n- NEVER use square brackets or placeholder tags like [Recipient's Name], [Company DNA], or [Email link]. Write clean, ready-to-use marketing copy.\n- NEVER invent fake pricing or unlisted numbers unless provided in the request or Company DNA.\n\nCreate campaigns containing these exact JSON keys:\n- campaign_name\n- campaign_type (must be one of: promotional, awareness, lead_generation, retention, announcement)\n- target_audience\n- channel (must be one of: email, whatsapp, website)\n- subject\n- content (complete, polished text with NO brackets)\n\nReturn ONLY a single valid JSON object. \nNo markdown blocks (do not use ```json). \nNo explanations.\n\nOutput exactly this structure:\n{\n  \"campaign_name\": \"\",\n  \"campaign_type\": \"\",\n  \"target_audience\": \"\",\n  \"channel\": \"\",\n  \"subject\": \"\",\n  \"content\": \"\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "73773acf-71ff-4087-a2bb-39c9ee28d586",
+      "name": "Marketing Campaign Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        224
+      ],
+      "id": "5ff65256-0627-4ac1-9eba-8c6b1c5b98d5",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output ? $json.output : ($json.text ? $json.text : ($json.content ? $json.content :$json));\n\nif (!raw || (typeof raw === 'object' && Object.keys(raw).length === 0)) {\n  throw new Error('Marketing Campaign Agent returned empty output.');\n}\n\nlet campaign;\n\ntry {\n  campaign = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (error) {\n  campaign = { content: String(raw) };\n}\n\nconst name = String(campaign.campaign_name ? campaign.campaign_name : 'Marketing Campaign').trim();\nconst type = String(campaign.campaign_type ? campaign.campaign_type : 'General').trim();\nconst audience = String(campaign.target_audience ? campaign.target_audience : 'All Customers').trim();\nconst channel = String(campaign.channel ? campaign.channel : 'Email').trim();\nconst subject = String(campaign.subject ? campaign.subject : '').trim();\nconst content = String(campaign.content ? campaign.content : (campaign.message ? campaign.message : '')).trim();\n\nconst assistantMessage = `Campaign created successfully!\\n• Name: ${name}\\n• Type: ${type}\\n• Channel: ${channel}\\n• Target Audience: ${audience}${subject ? `\\n• Subject: ${subject}` : ''}`;\n\nreturn [{\n  json: {\n    campaign_name: name,\n    campaign_type: type,\n    target_audience: audience,\n    channel: channel,\n    subject: subject,\n    content: content,\n    assistant_message: assistantMessage,\n    message: assistantMessage\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "0ae35fd3-b9b5-4ad5-81f8-26aab34b35a3",
+      "name": "Parse Campaign Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst content = String(data.content || '');\n\nconst recipientMatch = content.match(/total recipients:\\s*(\\d+)/i);\nconst audienceMatch = String(data.target_audience || '').match(/(\\d+)/);\n\nconst companyId = String(\n  data.company_id || \n  $('When Executed by Another Workflow').first()?.json?.company_id || \n  'COMP001'\n).trim();\n\nreturn [{\n  json: {\n    campaign_id: 'CMP-' + String($execution.id),\n    company_id: companyId,\n    campaign_name: String(data.campaign_name || '').trim(),\n    campaign_type: String(data.campaign_type || '').trim(),\n    target_audience: String(data.target_audience || '').trim(),\n    channel: String(data.channel || '').trim(),\n    subject: String(data.subject || '').trim(),\n    content: content.trim(),\n    status: 'draft',\n    scheduled_at: '',\n    sent_at: '',\n    total_recipients: Number(\n      data.total_recipients ||\n      audienceMatch?.[1] ||\n      recipientMatch?.[1] ||\n      0\n    ),\n    responses: 0,\n    conversions: 0,\n    created_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "3668689e-f5f4-4bf8-829d-459773ccfcb7",
+      "name": "Prepare Campaign Record"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "campaign_id": "={{ $json.campaign_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "campaign_name": "={{ $json.campaign_name }}",
+            "campaign_type": "={{ $json.campaign_type }}",
+            "target_audience": "={{ $json.target_audience }}",
+            "channel": "={{ $json.channel }}",
+            "subject": "={{ $json.subject }}",
+            "content": "={{ $json.content }}",
+            "status": "={{ $json.status }}",
+            "scheduled_at": "={{ $json.scheduled_at }}",
+            "sent_at": "={{ $json.sent_at }}",
+            "total_recipients": "={{ $json.total_recipients }}",
+            "responses": "={{ $json.responses }}",
+            "conversions": "= {{ $json.conversions }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "4e99d62f-b7f8-4035-827f-f419fdc3b8df",
+      "name": "Save Campaign"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "71f1fd1e-88e2-449d-b9e6-4d3aa2ad8b33",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "draft",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        0
+      ],
+      "id": "74d0a5ca-cfa5-4a1c-9333-6246d1059643",
+      "name": "Campaign Approval?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1107986d-1895-4947-ae17-5b3cf2953eef",
+              "name": "status ",
+              "value": "approval_pending",
+              "type": "string"
+            },
+            {
+              "id": "b25e83b7-e16a-4ba1-8742-3726ec15c8d8",
+              "name": "message ",
+              "value": "Campaign created and is waiting for human approval.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1072,
+        -80
+      ],
+      "id": "9e3d098a-7d7a-4526-b228-0b179ac96324",
+      "name": "Request Campaign Approval"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Save Campaign').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        -80
+      ],
+      "id": "fe0495ba-ff85-4aa7-9a9c-b76a65542752",
+      "name": "Update Campaign Approval Status"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28d6c991-8000-466a-801f-f5bfc588fd58",
+              "name": "output ",
+              "value": "Campaign created successfully and submitted for human approval.",
+              "type": "string"
+            },
+            {
+              "id": "73fb51bf-06ab-4857-bf23-9d0e97584b99",
+              "name": "approval_url",
+              "value": "={{ $execution.resumeUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1424,
+        -80
+      ],
+      "id": "b7f64e5f-3b93-4233-99e7-ea9f3f279bb0",
+      "name": "Campaign Response"
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "Campaign Approval Request",
+        "formDescription": "Please review the campaign and approve or reject it.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "approved",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Reject"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1808,
+        -80
+      ],
+      "id": "5ef274ba-2e99-491d-89fa-87f84cb3bf1b",
+      "name": "Wait for Campaign Approval",
+      "webhookId": "dcf2c16a-090f-4fd9-877f-b45976d9fc0d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b3f6296d-8ee0-4b87-9457-51f9ec56a952",
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": "Approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2032,
+        -80
+      ],
+      "id": "1178705e-23db-4d5f-a9a8-a614640094b4",
+      "name": "Campaign Approved?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Save Campaign').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "approved"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2304,
+        -272
+      ],
+      "id": "c5f230c9-71aa-4d23-a4e3-f153331406fc",
+      "name": "Mark Campaign Approved"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1f145aaf-a22a-4749-86fe-767451e02a40",
+              "name": "output ",
+              "value": "=={{ $('Parse Campaign Output').first().json.subject + \"\\n\\n\" + $('Parse Campaign Output').first().json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        6784,
+        -160
+      ],
+      "id": "ad871555-d4d1-47af-9cbf-b439de86708c",
+      "name": "Campaign Final Response"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Save Campaign').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "rejected"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2288,
+        96
+      ],
+      "id": "74b73ffb-91d9-4436-af87-3433e56be5df",
+      "name": "Mark Campaign Rejected"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst scheduledAt = data.scheduled_at || new Date(Date.now() + 120000).toISOString();\n\nreturn [{\n  json: {\n    ...data,\n    scheduled_at: scheduledAt,\n    status: 'scheduled'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2784,
+        -272
+      ],
+      "id": "96ba85f6-bce4-4ef7-a0da-648b1c9da8a9",
+      "name": "Schedule Campaign"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Mark Campaign Approved').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "scheduled_at": "={{ $json.scheduled_at }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3136,
+        -256
+      ],
+      "id": "55edab74-d714-4eba-b2a6-6bcb7ec1af87",
+      "name": "Update Scheduled Campaign"
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.scheduled_at }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2976,
+        -128
+      ],
+      "id": "58c6a686-1144-4801-b8fe-7eb40f564962",
+      "name": "Wait Until Scheduled Time",
+      "webhookId": "e4640281-0c42-4ae0-838d-ed617567a16b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    status: 'ready_to_execute',\n    executed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3296,
+        -128
+      ],
+      "id": "d4154763-6886-49c4-abf6-8273ee43da2d",
+      "name": "Mark Campaign Ready"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Mark Campaign Ready').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3472,
+        -240
+      ],
+      "id": "f1e7aab4-7887-468a-a48f-b9db3dae66e6",
+      "name": "Update Campaign Ready Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    status: 'executing',\n    execution_started_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -128
+      ],
+      "id": "7942ebcb-a50a-4364-b776-4cd0ea5e89b4",
+      "name": "Execute Campaign"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Execute Campaign').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3856,
+        -240
+      ],
+      "id": "0c4e8def-e7d3-4396-a258-c05615b64294",
+      "name": "Update Campaign to Executing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    status: 'sent',\n    sent_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        -128
+      ],
+      "id": "78d769ff-6eab-4fed-b723-8e7cc0caf357",
+      "name": "Send Campaign"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Send Campaign').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4192,
+        -256
+      ],
+      "id": "6a5db0ca-e16d-433e-9058-0a1509b04d1d",
+      "name": "Update Campaign Sent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    execution_result: 'Campaign sent successfully',\n    status: 'completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4528,
+        -240
+      ],
+      "id": "64810436-eb0d-4ec6-a559-4b8fa0a9a771",
+      "name": "Campaign Execution Result"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4368,
+        -128
+      ],
+      "id": "7757ee24-8f50-4086-8073-afdbf42266bb",
+      "name": "Final Campaign Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    campaign_id: data.campaign_id,\n    status: 'completed',\n    message: 'Campaign has been scheduled and sent successfully.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        -144
+      ],
+      "id": "f6c1a5cc-eea9-4f0b-844a-e6d736802ca2",
+      "name": "Campaign Complete Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    target_audience: data.target_audience || 'general',\n    segmentation_status: 'completed'\n  }\n}];;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4864,
+        -240
+      ],
+      "id": "c5e15a32-7b9b-4a08-abf7-677dcaa59c2a",
+      "name": "target audeience"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {},
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('target audeience').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "target_audience": "={{ $json.target_audience }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5024,
+        -128
+      ],
+      "id": "8723d201-33ed-4ef2-aef8-670d23905955",
+      "name": "Update Campaign Audience"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst audience = data.target_audience || 'general';\nconst content = data.content || data.campaign_content || '';\n\nreturn [{\n  json: {\n    ...data,\n    personalized_content: content\n      ? `${content}\\n\\nTarget audience: ${audience}`\n      : `Campaign message for ${audience}`,\n    personalization_status: 'completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5184,
+        -240
+      ],
+      "id": "6cf33d2b-98e8-40fe-94fe-7ed164829807",
+      "name": "Generate Personalized Content"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Generate Personalized Content').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "content": "={{ $json.personalized_content }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5360,
+        -128
+      ],
+      "id": "72587ca1-6e9f-456f-8a4c-388c763d5d54",
+      "name": "Update Personalized Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    engagement_status: 'tracked',\n    delivery_status: data.delivery_status || 'delivered',\n    engagement: data.engagement || {\n      delivered: 1,\n      opened: 0,\n      clicked: 0,\n      responded: 0\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5520,
+        -240
+      ],
+      "id": "edc05e02-a730-4cc5-92cf-bb79a7246170",
+      "name": "Track Campaign Engagement"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Track Campaign Engagement').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "responses": "={{ $json.responses || 0 }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5680,
+        -160
+      ],
+      "id": "77f34e67-2bb0-412b-af3d-ded62084ef7a",
+      "name": "Update Campaign Engagement"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    conversion_status: 'tracked',\n    conversions: data.conversions || 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5856,
+        -240
+      ],
+      "id": "26461354-b658-48d7-a96f-fb04c78d8b2c",
+      "name": "Track Campaign Conversions"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "campaign_id",
+              "keyValue": "={{ $('Track Campaign Conversions').first().json.campaign_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "responses": "={{ $json.responses || 0 }}",
+            "conversions": "={{ $json.conversions || 0 }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        6016,
+        -160
+      ],
+      "id": "8e3507af-7f5e-41d8-8ce6-c14b4cb174a1",
+      "name": "Update Campaign Metrics"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst recipients = Number(data.total_recipients || 0);\nconst responses = Number(data.responses || 0);\nconst conversions = Number(data.conversions || 0);\n\nconst responseRate = recipients > 0\n  ? ((responses / recipients) * 100).toFixed(2)\n  : '0.00';\n\nconst conversionRate = recipients > 0\n  ? ((conversions / recipients) * 100).toFixed(2)\n  : '0.00';\n\nreturn [{\n  json: {\n    ...data,\n    response_rate: Number(responseRate),\n    conversion_rate: Number(conversionRate),\n    analytics_status: 'completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6176,
+        -224
+      ],
+      "id": "8e16f75e-e802-41f8-a111-416d65bcbfad",
+      "name": "Analyze Campaign Performance"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    campaign_id: data.campaign_id,\n    campaign_name: data.campaign_name,\n    status: data.status,\n    total_recipients: Number(data.total_recipients || 0),\n    responses: Number(data.responses || 0),\n    conversions: Number(data.conversions || 0),\n    response_rate: Number(data.response_rate || 0),\n    conversion_rate: Number(data.conversion_rate || 0),\n    report_status: 'completed',\n    report_summary:\n      `Campaign ${data.campaign_name || data.campaign_id} completed with ` +\n      `${data.responses || 0} responses and ${data.conversions || 0} conversions.`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6352,
+        -160
+      ],
+      "id": "31836f57-4398-469a-ac2d-176f6dc9a738",
+      "name": "Generate Campaign Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    campaign_id: data.campaign_id,\n    campaign_name: data.campaign_name,\n    status: data.status,\n    total_recipients: data.total_recipients,\n    responses: data.responses,\n    conversions: data.conversions,\n    response_rate: data.response_rate,\n    conversion_rate: data.conversion_rate,\n    report: data.report_summary\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6576,
+        -160
+      ],
+      "id": "c19490e2-6c19-42bc-a8e4-1cc89e65abea",
+      "name": "Campaign Report Response"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "c711dfb7-cb13-4178-b9a9-08d1929abaf8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "[https://ntfy.sh/alaiha_n8n_approval_alerts](https://ntfy.sh/alaiha_n8n_approval_alerts)",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"topic\": \"alaiha_n8n_approval_alerts\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1616,
+        -80
+      ],
+      "id": "38e9cc68-e5ba-4877-99c6-1199f43c36de",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst dynamicMessage = input.assistant_message || input.output || \"Your campaign has been successfully scheduled and queued!\";\n\nreturn [{\n  json: {\n    ...input,\n    assistant_message: dynamicMessage,\n    status: \"completed\",\n    execution_result: \"success\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        -272
+      ],
+      "id": "f657b037-17a5-45bc-939e-90eadbd5b18f",
+      "name": "Return Immediate Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3e178cef-c51a-4c15-ac87-f66f6ed18d1f",
+              "name": "final_response",
+              "value": "=Your campaign request was rejected.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2512,
+        96
+      ],
+      "id": "804359cd-faf7-43b7-aae0-7aa46465052c",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Marketing Campaign Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Marketing Campaign Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marketing Campaign Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Campaign Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Campaign Output": {
+      "main": [
+        [
+          {
+            "node": "Prepare Campaign Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Campaign Record": {
+      "main": [
+        [
+          {
+            "node": "Save Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Campaign": {
+      "main": [
+        [
+          {
+            "node": "Campaign Approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Approval?": {
+      "main": [
+        [
+          {
+            "node": "Request Campaign Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Campaign Approval": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Approval Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Approval Status": {
+      "main": [
+        [
+          {
+            "node": "Campaign Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Response": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Campaign Approval": {
+      "main": [
+        [
+          {
+            "node": "Campaign Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Approved?": {
+      "main": [
+        [
+          {
+            "node": "Mark Campaign Approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Campaign Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Campaign Approved": {
+      "main": [
+        [
+          {
+            "node": "Return Immediate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Campaign": {
+      "main": [
+        [
+          {
+            "node": "Wait Until Scheduled Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Scheduled Campaign": {
+      "main": [
+        [
+          {
+            "node": "Mark Campaign Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until Scheduled Time": {
+      "main": [
+        [
+          {
+            "node": "Update Scheduled Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Campaign Ready": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Ready Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Ready Status": {
+      "main": [
+        [
+          {
+            "node": "Execute Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Campaign": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign to Executing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign to Executing": {
+      "main": [
+        [
+          {
+            "node": "Send Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Campaign": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Sent": {
+      "main": [
+        [
+          {
+            "node": "Final Campaign Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Execution Result": {
+      "main": [
+        [
+          {
+            "node": "Campaign Complete Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Campaign Status": {
+      "main": [
+        [
+          {
+            "node": "Campaign Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Complete Response": {
+      "main": [
+        [
+          {
+            "node": "target audeience",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "target audeience": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Audience",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Audience": {
+      "main": [
+        [
+          {
+            "node": "Generate Personalized Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Personalized Content": {
+      "main": [
+        [
+          {
+            "node": "Update Personalized Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Personalized Content": {
+      "main": [
+        [
+          {
+            "node": "Track Campaign Engagement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Campaign Engagement": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Engagement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Engagement": {
+      "main": [
+        [
+          {
+            "node": "Track Campaign Conversions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Campaign Conversions": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Campaign Metrics": {
+      "main": [
+        [
+          {
+            "node": "Analyze Campaign Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Campaign Performance": {
+      "main": [
+        [
+          {
+            "node": "Generate Campaign Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Campaign Report": {
+      "main": [
+        [
+          {
+            "node": "Campaign Report Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Report Response": {
+      "main": [
+        [
+          {
+            "node": "Campaign Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Final Response": {
+      "main": []
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait for Campaign Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Immediate Response": {
+      "main": [
+        [
+          {
+            "node": "Schedule Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Campaign Rejected": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "028d3c6e-6a46-4e69-932d-3245d24b71d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "3Urx1cH3TtImAmx3",
+  "tags": []
+}
