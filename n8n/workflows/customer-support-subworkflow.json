@@ -1,0 +1,1992 @@
+{
+  "name": "Customer Support subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer message:\n{{ $json.user_message \vert{}\vert{}$json.body?.customer_message || $json.customer_message \vert{}\vert{}$json.text || \"No message provided\" }}\n\nCompany ID: {{ $json.company_id }}\nSession ID: {{ $json.session_id }}\n\nPrevious Support Tickets Summary:\n{{ JSON.stringify($('Get Previous Support Tickets').all().map(item => ({ issue: item.json.issue, resolution: item.json.resolution, status: item.json.status }))) }}",
+        "options": {
+          "systemMessage": "You are an expert SMB Cybersecurity Technical Support Agent.\n\nAnalyze the customer's current message using Approved Company DNA and Previous Support Tickets.\n\nReturn ONLY this JSON:\n\n{\n  \"issue\": \"\",\n  \"category\": \"\",\n  \"priority\": \"\",\n  \"sentiment\": \"\",\n  \"resolution\": \"\",\n  \"human_handoff\": false,\n  \"verification_required\": false,\n  \"approval_required\": false\n}\n\nRULES:\n- All 9 fields are required.\n- Text fields are strings.\n- human_handoff, verification_required, approval_required are booleans.\n- category: technical_issue, billing, service_issue, account, general_question, complaint.\n- priority: low, medium, high, urgent.\n- sentiment: positive, neutral, negative.\n- Missing information = \"\".\n- Never invent information.\n- Use Company DNA as the primary source for cybersecurity services, cloud assessments, and technical prerequisites.\n- CRITICAL: Never mention orders, packages, shipping, tracking, or e-commerce.\n\nHUMAN HANDOFF = true ONLY when:\n1. Customer explicitly asks for a human.\n2. The requested technical information is completely missing from Company DNA.\nOtherwise false.\n\nSAFE RESOLUTION RULES:\n- Use ONLY Approved Company DNA to answer technical questions (like AWS/Azure Cloud Security Assessment prerequisites).\n- \"resolution\" MUST provide the exact technical prerequisites or explanation found in Company DNA.\n- Keep resolution under 25 words.\n\nReturn ONE complete JSON object. No markdown formatting (like ```json), no explanation, no extra fields."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1536,
+        272
+      ],
+      "id": "79df508e-4d97-40dc-a78c-90204eabdc38",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        624
+      ],
+      "id": "729ba326-2f9e-4c4f-9bc0-7867cc1e3b4e",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output;\n\nif (!raw) {\n  throw new Error('Support Agent returned empty output.');\n}\n\nlet support;\n\ntry {\n  support = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (error) {\n  support = {\n    issue: String(raw),\n    category: 'general_query',\n    priority: 'normal',\n    sentiment: 'neutral',\n    resolution: String(raw),\n    human_handoff: false,\n    approval_required: false\n  };\n}\n\nreturn [{\n  json: {\n    ...$json,\n    issue: String(support.issue || '').trim(),\n    category: String(support.category || '').trim(),\n    priority: String(support.priority || '').trim(),\n    sentiment: String(support.sentiment || '').trim(),\n    resolution: String(support.resolution || '').trim(),\n    human_handoff: support.human_handoff === true,\n    approval_required: support.approval_required === true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        272
+      ],
+      "id": "e9008cf0-6f6c-4079-a537-8308ab30cb28",
+      "name": "Parse Support Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ticket_id: 'TKT-' + String($execution.id),\n    company_id: 'COMP001',\n    session_id: String($execution.id),\n    customer_name: '',\n    email: '',\n    issue: String(data.issue || '').trim(),\n    category: String(data.category || '').trim(),\n    priority: String(data.priority || '').trim(),\n    sentiment: String(data.sentiment || '').trim(),\n    resolution: String(data.resolution || '').trim(),\n    human_handoff: data.human_handoff === true,\n    status: 'new',\n    created_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        272
+      ],
+      "id": "7e429ba1-a1af-45ad-9c68-d43f38bb40eb",
+      "name": "Prepare Support Ticket"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ $json.human_handoff }}",
+            "ticket_id": "={{ $json.ticket_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "issue": "={{ $json.issue }}",
+            "category": "={{ $json.category }}",
+            "priority": "={{ $json.priority }}",
+            "sentiment": "={{ $json.sentiment }}",
+            "resolution": "={{ $json.resolution }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        256
+      ],
+      "id": "9b60fafe-6094-442f-8aba-a2155a1f5905",
+      "name": "Save Support Ticket"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7480b60c-8143-48a8-b8ba-4e9f86501e0b",
+              "leftValue": "={{ $json.human_handoff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2512,
+        272
+      ],
+      "id": "e66c21e3-6c5d-4328-8025-b711490da869",
+      "name": "Human Handoff?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dc3e3787-2d4e-4246-ba27-8acc7826094b",
+              "name": "output",
+              "value": "={{ $json.resolution || \"We’ve received your support request. If the issue continues, please let us know so we can escalate it to our support team.\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2912,
+        560
+      ],
+      "id": "22b19f09-bf5e-402e-991c-1a182629e7fa",
+      "name": "Support Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e81605e-205c-4879-a94a-1844814932a4",
+              "name": "status",
+              "value": "human_handoff",
+              "type": "string"
+            },
+            {
+              "id": "72b9989c-dd0a-4fae-9069-a844f0cf5c1f",
+              "name": "output",
+              "value": "I’m sorry you’re experiencing this issue. I’ll connect you with a human support team member who can help you further.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2720,
+        112
+      ],
+      "id": "aaeb251b-9ad9-41d4-8125-449d7803645a",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Save Support Ticket').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ true }}",
+            "status": "human_handoff"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3168,
+        112
+      ],
+      "id": "895d6fba-a51c-4721-926c-67b857c34585",
+      "name": "Update Handoff Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    output: \"I’m sorry you’re experiencing this issue. I’ll connect you with a human support team member who can help you further.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3616,
+        112
+      ],
+      "id": "ed9674d2-9986-4dad-8362-a98c3558b5f6",
+      "name": "Handoff Final Response"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "=COMP001"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        272
+      ],
+      "id": "f16acfa8-138b-4d1a-8733-80491dcae04a",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "COMP001"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        272
+      ],
+      "id": "bd7ae612-95b3-4975-ac0a-3830767bfdf8",
+      "name": "Get Previous Support Tickets"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e728aa4-6314-476c-aea1-f0d991ff733d",
+              "name": "output",
+              "value": "={{ $json.resolution }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3136,
+        560
+      ],
+      "id": "c179fbec-c1dc-482c-8fd9-8e44382a869a",
+      "name": "Ask Resolution Confirmation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0386f738-0e72-43cc-af2c-99f2f062ac0f",
+              "leftValue": "={{ $json.user_message }}",
+              "rightValue": "^(yes|yes please|yeah|yep|it did|resolved|no|nope|not yet|still not|it didn't)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -592,
+        -704
+      ],
+      "id": "2fd0995e-8e1f-41cb-9f53-ae325e882b3b",
+      "name": "Confirmation?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ab0f8a7d-44c5-421e-a666-b325091491d8",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "^(yes|yes please|yeah|yep|it did|resolved)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1088,
+        -736
+      ],
+      "id": "42b6faba-67dc-4e1c-8015-829c2519ca9d",
+      "name": "Is Resolved?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "resolved"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1632,
+        -928
+      ],
+      "id": "098ff4a3-0065-4dd7-8fad-eaea8ca5306c",
+      "name": "Mark Ticket Resolved"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "new"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        -928
+      ],
+      "id": "c4cb3293-b806-4ade-89ca-5d522a732e53",
+      "name": "Get Pending Ticket"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d936030e-93eb-4158-a02a-4034e18566dc",
+              "name": "output",
+              "value": "Thanks for confirming. Your support issue has been marked as resolved.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        -928
+      ],
+      "id": "5b8969b7-3c54-4a36-a1e1-61cc29bbfa63",
+      "name": "Resolved Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "43e724b0-c47e-4ca2-b762-3fea6bfdab56",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "^(no|nope|not yet|still not|it didn't|not resolved)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1376,
+        -592
+      ],
+      "id": "93f4a322-9580-40c1-a83e-1260a2bcf9da",
+      "name": "Issue Still Unresolved?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b8a8833-511c-4a7e-8b19-cab35997eb5e",
+              "name": "output",
+              "value": "I’m sorry the issue is still unresolved. I’ll connect you with a human support team member for further assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2512,
+        -608
+      ],
+      "id": "ce03b571-06a4-404b-911d-79e39b96d398",
+      "name": "Unresolved Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "825960f9-2db2-4909-99e9-30fb94be6dd1",
+              "name": "output ",
+              "value": "I’m sorry the issue is still unresolved. I’ll connect you with a human support team member for further assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2096,
+        -608
+      ],
+      "id": "5a86d08b-5527-4d21-a45b-76eb7577a4d6",
+      "name": "Prepare Unresolved Ticket"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "new"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        -608
+      ],
+      "id": "4138e8fe-7fed-4371-a250-dc479d3e3b5c",
+      "name": "Get Pending Ticket - Unresolved"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Get Pending Ticket - Unresolved').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ true }}",
+            "status": "open"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2320,
+        -608
+      ],
+      "id": "c3ecd266-1d24-436a-a68d-cf9c5ff544ad",
+      "name": "Update Ticket Open"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d6843592-6a79-46a9-9a4c-25beb88844cc",
+              "name": "output",
+              "value": "For account-specific requests, please verify your identity by providing the email address associated with your account. Please do not share your password, OTP, PIN, or payment card details.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        944,
+        -128
+      ],
+      "id": "8c04f266-dfc6-4a97-9464-9d77cefe61bc",
+      "name": "Request Verification"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "kkdtCbgz3CxGZVmb",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "=false",
+            "ticket_id": "=VER-{{ $execution.id }}",
+            "company_id": "=COMP001",
+            "session_id": "={{ $('When Executed by Another Workflow').first().json.sessionId }}",
+            "customer_name": "\"\"",
+            "email": "\"\"",
+            "resolution": "\"\"",
+            "issue": "={{ $('When Executed by Another Workflow').first().json.chatInput }}",
+            "category": "account",
+            "priority": "high",
+            "sentiment": "neutral",
+            "status": "verification_pending",
+            "created_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        -128
+      ],
+      "id": "f29677bb-3e4d-405b-a72f-7952b581764c",
+      "name": "Create Verification Ticket"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cacebac4-9081-4aee-ae40-e0f290216bac",
+              "leftValue": "={{ String($json.message || '') }}",
+              "rightValue": "(change|update|delete|remove).*(account|email|phone|personal|billing|details)|my (account|email|phone|personal|billing|details)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        64
+      ],
+      "id": "bbf133bf-96a2-4bfd-bc71-559161a20651",
+      "name": "Verification Required?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0bc71e4c-c2e2-41e4-8f03-7e9b1697f42c",
+              "name": "company_id",
+              "value": "COMP001",
+              "type": "string"
+            },
+            {
+              "id": "1dce40e7-e335-4954-8c5e-f77f9a02df1a",
+              "name": "session_id",
+              "value": "={{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "6c8ded47-0116-4f24-ad1f-eeb195be2fe4",
+              "name": "original_message",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        720,
+        -128
+      ],
+      "id": "07ce58d6-f723-4a1b-9a63-e6f4a2b9c46b",
+      "name": "Set Verification State"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "verification_pending"
+            },
+            {
+              "keyName": "company_id",
+              "keyValue": "{{ $json.company_id }}"
+            },
+            {
+              "keyName": "session_id",
+              "keyValue": "={{ $json.session_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        -80
+      ],
+      "id": "01598117-391a-48df-89fd-f7ce761b00ce",
+      "name": "Get Pending Verification",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6ca9f790-67d0-4938-9922-84b03cf8290f",
+              "leftValue": "={{ $json.ticket_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -80
+      ],
+      "id": "949853b4-5c7c-44f2-ba2b-e41c71322d66",
+      "name": "Verification Pending?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "39e59ad9-1873-4b6f-a16e-801245a6aef6",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "=[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        -384
+      ],
+      "id": "7b3d2527-4207-4ec5-9436-f9ba7ca15cf6",
+      "name": "Verify Customer"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e70cb8e-1f67-4f56-b494-1f742b2d4375",
+              "name": "output",
+              "value": "Your identity has been verified. Your account email change request can now be processed.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        512,
+        -448
+      ],
+      "id": "84577657-79dd-40b0-81e6-5ebf775139c1",
+      "name": "Verification Success"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4d3b6cde-72a6-41f8-8c84-08c1223138a5",
+              "name": "output",
+              "value": "We could not verify your identity. Please provide the email address associated with your account.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        512,
+        -288
+      ],
+      "id": "44a7fe54-a15f-49b3-a959-4b288869b9a5",
+      "name": "Verification Failed"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Get Pending Verification').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": false,
+            "status": "verified"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        -448
+      ],
+      "id": "7e5fc6c3-52a6-482f-acc4-f0b844499a69",
+      "name": "Update Verification Status"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afd2ef63-c5ad-4eb7-b3bb-e99dcba3cd49",
+              "name": "output",
+              "value": "Your identity has been verified. Your request can now be processed.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        944,
+        -448
+      ],
+      "id": "cd358fd1-6f0c-44bc-ba58-cec9001174a1",
+      "name": "Verified Request"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Get Pending Verification').first().json.ticket_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        -448
+      ],
+      "id": "a6031c56-7afa-40ed-95c2-dfb2cb2ef7f4",
+      "name": "Get Verified Ticket"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Get Verified Ticket').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": false,
+            "status": "open"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        -448
+      ],
+      "id": "ba9c107d-86ce-4a68-bdc7-4e86fe3d8f19",
+      "name": "Update Verified Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc09c719-3ff1-46d0-894f-25673bf7fe27",
+              "name": "output",
+              "value": "Your identity has been verified. Your account request has been received and is now open for processing.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1840,
+        -448
+      ],
+      "id": "b2ee681a-4dba-4358-b8a0-c2541cef6e15",
+      "name": "Verified Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0559e244-feeb-4ca6-a00b-7afc6fe47734",
+              "leftValue": "={{ String($json.chatInput || '') }}",
+              "rightValue": "(password|otp|pin|payment card|card number|credit card|debit card|security code|2fa|two-factor|authentication code|api key|secret|token)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        208
+      ],
+      "id": "4ed427f1-2d24-44cc-b7c7-9d7e64be64a1",
+      "name": "Sensitive Request?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2cdbe98-2d01-4a75-aa70-f69212058423",
+              "name": "output",
+              "value": "For security reasons, please do not share passwords, OTPs, PINs, payment card details, API keys, or secrets. I’ll connect you with a human support team member for assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        32
+      ],
+      "id": "33c62f22-78ce-4a3c-86e7-f0a7a0245f2c",
+      "name": "Sensitive Escalation"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Get Pending Verification').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": "={{ true }}",
+            "status": "human_handoff"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1072,
+        32
+      ],
+      "id": "c7742046-ff86-470e-afc7-92525faefbd6",
+      "name": "Mark Sensitive Handoff"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "892fb2b4-da26-4017-8ca9-a55a7515b8b9",
+              "name": "output",
+              "value": "For security reasons, I’ll connect you with a human support team member for assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        32
+      ],
+      "id": "da9db256-5058-4704-aa68-b9c05d6ac24b",
+      "name": "Sensitive Final Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8abae56c-da97-449b-b541-4e82b28034a3",
+              "leftValue": "={{ $json.approval_required }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2720,
+        384
+      ],
+      "id": "aad5fb3f-e52b-4c91-a0a6-408ec6dbeb73",
+      "name": "Approval Required?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_id",
+              "keyValue": "={{ $('Save Support Ticket').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_handoff": false,
+            "status": "approval_pending"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3168,
+        288
+      ],
+      "id": "02b211c4-1801-4374-b7aa-8dfbc2d67815",
+      "name": "Mark Approval Pending"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e7a4794-c9a5-46c9-8256-690a58ddd95f",
+              "name": "output",
+              "value": "This request requires human approval. I’ll forward it to the appropriate support team for review.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3616,
+        288
+      ],
+      "id": "79147505-1655-4b2d-99f1-75cb115044f8",
+      "name": "Request Approval"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3745cffe-4015-440b-858f-49ae6d702ccb",
+              "name": "output",
+              "value": "Your request has been submitted for human approval. Our support team will review it and proceed accordingly.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3840,
+        288
+      ],
+      "id": "b98ec3cc-9702-4af9-8372-f5dbf5390655",
+      "name": "Approval Final Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b6d37eec-f67c-437a-84b1-0f3c1ae0ac86",
+              "name": "Customer issue:",
+              "value": "={{ $('Prepare Support Ticket').first().json.issue }}",
+              "type": "string"
+            },
+            {
+              "id": "0e364161-a00a-4462-b3cd-d410742c297e",
+              "name": "Category",
+              "value": "={{ $('Prepare Support Ticket').first().json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "dec52649-5e55-4653-b64f-c78828e935c9",
+              "name": "Priority",
+              "value": "={{ $('Prepare Support Ticket').first().json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "7d24cde5-d8eb-4dfe-833f-d5ad7843a2ca",
+              "name": "Sentiment",
+              "value": "= {{ $('Prepare Support Ticket').first().json.sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "68d47dfc-5a1a-4a4e-9d6e-8a9d506c15bd",
+              "name": "Resolution attempted",
+              "value": "={{ $('Prepare Support Ticket').first().json.resolution }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2944,
+        112
+      ],
+      "id": "a3b1f341-0a0f-48bc-992b-b620b44057fb",
+      "name": "Prepare Handoff Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\n\nif (rows.length === 0) {\n  return [];\n}\n\nreturn [\n  {\n    json: rows[0].json\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -80
+      ],
+      "id": "6bd91151-0d9c-41a5-95c4-8ce1ad1cf308",
+      "name": "Get One Pending Verification"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "t1358d5qDH8xdQYy",
+          "mode": "list",
+          "cachedResultName": "Customer Accounts",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "=COMP001"
+            },
+            {
+              "keyName": "email",
+              "keyValue": "={{ $('When chat message received').first().json.chatInput.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/)?.[0] || '' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1616,
+        -448
+      ],
+      "id": "0dcfb6ec-72c2-4099-b1ce-b01252a5fcc1",
+      "name": "Get Customer Account"
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@company.com",
+        "toEmail": "your-email@company.com",
+        "subject": "New Customer Support Ticket",
+        "html": "=New Customer Support Ticket\n\nTicket ID: {{ $('Save Support Ticket').first().json.ticket_id }}\n\nCompany ID: {{ $('Save Support Ticket').first().json.company_id }}\n\nIssue: {{ $('Prepare Support Ticket').first().json.issue }}\n\nCategory: {{ $('Prepare Support Ticket').first().json.category }}\n\nPriority: {{ $('Prepare Support Ticket').first().json.priority }}\n\nSentiment: {{ $('Prepare Support Ticket').first().json.sentiment }}\n\nResolution Attempted: {{ $('Prepare Support Ticket').first().json.resolution }}\n\nHandoff Summary: {{ $('Prepare Handoff Summary').first().json.handoff_summary }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3392,
+        112
+      ],
+      "id": "567d8b09-4c22-414d-bb9b-6435bb23db93",
+      "name": "Send Support Email",
+      "credentials": {
+        "smtp": {
+          "id": "Vs2FLFiSJTdcgauQ",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "company_id"
+            },
+            {
+              "name": "company_name"
+            },
+            {
+              "name": "industry"
+            },
+            {
+              "name": "services"
+            },
+            {
+              "name": "pricing"
+            },
+            {
+              "name": "policies"
+            },
+            {
+              "name": "workflows"
+            },
+            {
+              "name": "permissions"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "user_message"
+            },
+            {
+              "name": "customer_message"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1056,
+        -704
+      ],
+      "id": "f6c02b87-5e3a-44ba-859e-831d2a2263aa",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Support Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Support Output": {
+      "main": [
+        [
+          {
+            "node": "Prepare Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Save Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Approval Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Prepare Handoff Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Handoff Status": {
+      "main": [
+        [
+          {
+            "node": "Send Support Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff Final Response": {
+      "main": []
+    },
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Support Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Support Tickets": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Response": {
+      "main": [
+        [
+          {
+            "node": "Ask Resolution Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Resolution Confirmation": {
+      "main": []
+    },
+    "Confirmation?": {
+      "main": [
+        [
+          {
+            "node": "Is Resolved?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Pending Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Resolved?": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Issue Still Unresolved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Ticket Resolved": {
+      "main": [
+        [
+          {
+            "node": "Resolved Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Ticket": {
+      "main": [
+        [
+          {
+            "node": "Mark Ticket Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Still Unresolved?": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Ticket - Unresolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Unresolved Ticket": {
+      "main": [
+        [
+          {
+            "node": "Update Ticket Open",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Ticket - Unresolved": {
+      "main": [
+        [
+          {
+            "node": "Prepare Unresolved Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Ticket Open": {
+      "main": [
+        [
+          {
+            "node": "Unresolved Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Verification": {
+      "main": [
+        [
+          {
+            "node": "Create Verification Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Verification Ticket": {
+      "main": []
+    },
+    "Verification Required?": {
+      "main": [
+        [
+          {
+            "node": "Set Verification State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sensitive Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Verification State": {
+      "main": [
+        [
+          {
+            "node": "Request Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Verification": {
+      "main": [
+        [
+          {
+            "node": "Get One Pending Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verification Pending?": {
+      "main": [
+        [
+          {
+            "node": "Verify Customer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verification Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Customer": {
+      "main": [
+        [
+          {
+            "node": "Verification Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verification Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verification Success": {
+      "main": [
+        [
+          {
+            "node": "Update Verification Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verification Failed": {
+      "main": []
+    },
+    "Update Verification Status": {
+      "main": [
+        [
+          {
+            "node": "Verified Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified Request": {
+      "main": [
+        [
+          {
+            "node": "Get Verified Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Verified Ticket": {
+      "main": [
+        [
+          {
+            "node": "Update Verified Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Verified Request": {
+      "main": [
+        [
+          {
+            "node": "Get Customer Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sensitive Request?": {
+      "main": [
+        [
+          {
+            "node": "Sensitive Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sensitive Escalation": {
+      "main": [
+        [
+          {
+            "node": "Mark Sensitive Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Sensitive Handoff": {
+      "main": [
+        [
+          {
+            "node": "Sensitive Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sensitive Final Response": {
+      "main": []
+    },
+    "Approval Required?": {
+      "main": [
+        [
+          {
+            "node": "Mark Approval Pending",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Support Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Approval Pending": {
+      "main": [
+        [
+          {
+            "node": "Request Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Approval": {
+      "main": [
+        [
+          {
+            "node": "Approval Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Handoff Summary": {
+      "main": [
+        [
+          {
+            "node": "Update Handoff Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get One Pending Verification": {
+      "main": [
+        [
+          {
+            "node": "Verification Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer Account": {
+      "main": [
+        [
+          {
+            "node": "Verified Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Support Email": {
+      "main": [
+        [
+          {
+            "node": "Handoff Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Confirmation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "251075c9-3334-4c0d-8d4c-e1951562f8eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "oSnzskea0R5GYo2i",
+  "tags": []
+}
