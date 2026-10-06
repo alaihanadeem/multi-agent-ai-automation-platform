@@ -1,0 +1,632 @@
+{
+  "name": "Analytics & Insights subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1248,
+        -144
+      ],
+      "id": "963eed72-0718-4494-86a2-6294a7729ee4",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -608
+      ],
+      "id": "9a750813-fd53-4e78-9904-6447fa073b35",
+      "name": "Get Leads Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P757h1tWt7GwDqE6",
+          "mode": "list",
+          "cachedResultName": "Sales Opportunities",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -480
+      ],
+      "id": "ce50f6b4-0ea3-4d16-aac1-8a4b5bffa650",
+      "name": "Get Sales Opportunities"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "ukylbuPpJtBVKCDN",
+          "mode": "list",
+          "cachedResultName": "Sales Quotes",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -352
+      ],
+      "id": "5b66f7bb-6cb8-4973-a649-7a640c5e35ee",
+      "name": "Get Quotes Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6PB6EFCdwnD95rdS",
+          "mode": "list",
+          "cachedResultName": "Appointment Slots",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": []
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -224
+      ],
+      "id": "0bf4c768-7eb8-44bf-9684-0cf9350f2309",
+      "name": "Get Appointments Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "XMPtH9sdFmjpQxwF",
+          "mode": "list",
+          "cachedResultName": "followup activity",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        -96
+      ],
+      "id": "728cdace-fbcb-44ad-b945-ed3bc14a772b",
+      "name": "Get Follow-up Activities"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "rqnd0wuzVhuo2vVd",
+          "mode": "list",
+          "cachedResultName": "Marketing Campaigns",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        32
+      ],
+      "id": "0ba81814-3830-40bb-846c-fb346039b75e",
+      "name": "Get Campaign Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "KtaR7REuBTvkS9cR",
+          "mode": "list",
+          "cachedResultName": "customer feedback",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -832,
+        192
+      ],
+      "id": "a4a35f4b-5c09-437a-ba46-c66d8c51027a",
+      "name": "Get Reviews Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "aWvntwAOdvQIC7Rv",
+          "mode": "list",
+          "cachedResultName": "Customer Support",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('When Executed by Another Workflow').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -832,
+        336
+      ],
+      "id": "3dd4c3fb-fd56-4aab-acff-33189fef3401",
+      "name": "Get Support Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => {\n  const normalized = {};\n\n  for (const [key, value] of Object.entries(item.json)) {\n    normalized[key.trim()] = value;\n  }\n\n  return normalized;\n});\n\nconst trigger = $('When Executed by Another Workflow').first().json;\n\nconst count = (condition) => rows.filter(condition).length;\n\nconst leads = count(r => r.lead_id);\n\nconst qualifiedLeads = count(\n  r => String(r.qualification_status || '').toLowerCase() === 'qualified'\n);\n\nconst opportunities = count(r => r.opportunity_id);\n\nconst won = count(\n  r => String(r.opportunity_stage || '').toLowerCase() === 'won'\n);\n\nconst lost = count(\n  r => String(r.opportunity_stage || '').toLowerCase() === 'lost'\n);\n\nconst quotes = count(r => r.quote_id);\n\nconst campaigns = count(r => r.campaign_id);\n\nconst appointments = count(r => r.appointment_id);\n\nconst followUps = count(r => r.activity_id);\n\nconst reviews = count(\n  r => r.review_id || r.feedback_id\n);\n\nconst conversions = won;\n\nconst leadQualificationRate =\n  leads > 0\n    ? Number(((qualifiedLeads / leads) * 100).toFixed(2))\n    : 0;\n\nconst leadToOpportunityRate =\n  leads > 0\n    ? Number(((opportunities / leads) * 100).toFixed(2))\n    : 0;\n\nconst opportunityWinRate =\n  opportunities > 0\n    ? Number(((won / opportunities) * 100).toFixed(2))\n    : 0;\n\nconst opportunityLossRate =\n  opportunities > 0\n    ? Number(((lost / opportunities) * 100).toFixed(2))\n    : 0;\n\nconst quoteToOpportunityRate =\n  opportunities > 0\n    ? Number(((quotes / opportunities) * 100).toFixed(2))\n    : 0;\n\nconst appointmentToOpportunityRate =\n  opportunities > 0\n    ? Number(((appointments / opportunities) * 100).toFixed(2))\n    : 0;\n\nconst overallConversionRate =\n  leads > 0\n    ? Number(((won / leads) * 100).toFixed(2))\n    : 0;\n\nreturn [{\n  json: {\n    company_id: trigger.company_id || '',\n    analysis_type: trigger.analysis_type || '',\n\n    total_leads: leads,\n    qualified_leads: qualifiedLeads,\n\n    total_opportunities: opportunities,\n    won_opportunities: won,\n    lost_opportunities: lost,\n\n    total_quotes: quotes,\n    total_appointments: appointments,\n    total_follow_ups: followUps,\n    total_campaigns: campaigns,\n    total_reviews: reviews,\n\n    conversions: conversions,\n\n    lead_qualification_rate: leadQualificationRate,\n    lead_to_opportunity_rate: leadToOpportunityRate,\n    opportunity_win_rate: opportunityWinRate,\n    opportunity_loss_rate: opportunityLossRate,\n    quote_to_opportunity_rate: quoteToOpportunityRate,\n    appointment_to_opportunity_rate: appointmentToOpportunityRate,\n    overall_conversion_rate: overallConversionRate,\n\n    analyzed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -144
+      ],
+      "id": "ab6dff63-7a5c-4960-8af1-a592b4084270",
+      "name": "Calculate Analytics"
+    },
+    {
+      "parameters": {
+        "numberInputs": 8
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -480,
+        -240
+      ],
+      "id": "26415265-0c17-4e91-929f-93361e4194bd",
+      "name": "Merge All Analytics Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the company analytics data and generate concise, factual business insights.\n\nUse ONLY the information explicitly provided below.\n\n=== CURRENT METRICS ===\n\nTotal Leads:\n{{ $('Prepare Trend Summary').first().json.total_leads }}\n\nQualified Leads:\n{{ $('Prepare Trend Summary').first().json.qualified_leads }}\n\nLead Qualification Rate:\n{{ $('Prepare Trend Summary').first().json.lead_qualification_rate }}%\n\nTotal Opportunities:\n{{ $('Prepare Trend Summary').first().json.total_opportunities }}\n\nWon Opportunities:\n{{ $('Prepare Trend Summary').first().json.won_opportunities }}\n\nLost Opportunities:\n{{ $('Prepare Trend Summary').first().json.lost_opportunities }}\n\nTotal Quotes:\n{{ $('Prepare Trend Summary').first().json.total_quotes }}\n\nTotal Appointments:\n{{ $('Prepare Trend Summary').first().json.total_appointments }}\n\nTotal Follow-ups:\n{{ $('Prepare Trend Summary').first().json.total_follow_ups }}\n\nTotal Campaigns:\n{{ $('Prepare Trend Summary').first().json.total_campaigns }}\n\nTotal Reviews:\n{{ $('Prepare Trend Summary').first().json.total_reviews }}\n\nConversions:\n{{ $('Prepare Trend Summary').first().json.conversions }}\n\nOverall Conversion Rate:\n{{ $('Prepare Trend Summary').first().json.overall_conversion_rate }}%\n\n=== VALID TRENDS ===\n\n{{ $('Prepare Trend Summary').first().json.valid_trends }}\n\n=== STRICT FACTUAL RULES ===\n\n1. Use ONLY the metrics and Valid Trends supplied above.\n\n2. Do NOT invent or infer:\n   - revenue\n   - profit\n   - customer behavior\n   - customer satisfaction\n   - causes\n   - sales problems\n   - pipeline health\n   - business performance beyond the supplied metrics\n   - missing metrics\n\n3. Do NOT mention revenue at all because revenue data is not provided.\n\n4. Do NOT use words such as:\n   - stagnant\n   - failing\n   - successful\n   - poor\n   - healthy\n   - unhealthy\n   - strong\n   - weak\n   unless the supplied data explicitly supports that description.\n\n5. Do NOT say that a metric is \"low\" unless a valid benchmark or comparison is provided.\nYou may state the exact metric value instead.\n\n6. Do NOT calculate any percentage.\n\n7. Do NOT create any trend.\n\n8. Do NOT modify, reinterpret, or recalculate the Valid Trends text.\n\n9. The Valid Trends section must contain ONLY the exact valid trends provided.\n\n10. If Valid Trends says:\n\"No valid trends can be established because previous-period data is unavailable.\"\nthen use that exact statement.\n\n11. Zero values are facts and may be reported.\nDo not invent a reason for a zero value.\n\n=== RECOMMENDATION RULES ===\n\nRecommendations must be directly connected to an observable metric.\n\nAllowed:\n\n- Qualified Leads = 1\n  → Recommend reviewing the lead qualification process.\n\n- Won Opportunities = 0\n  → Recommend reviewing the opportunity-to-win process.\n\n- Conversions = 0\n  → Recommend reviewing the conversion process.\n\n- Appointments = 0\n  → Recommend reviewing appointment activity.\n\n- Follow-ups = 2\n  → Recommend monitoring follow-up activity.\n\nDo NOT recommend:\n- increasing lead generation simply because leads exist\n- increasing campaigns simply because campaigns exist\n- generating revenue\n- improving revenue\n- increasing profit\n- sales training\n- changing pricing\n- changing products\n- changing customer strategy\n\nunless the corresponding data is explicitly provided.\n\nRecommendations must use cautious wording such as:\n- Review\n- Monitor\n- Investigate\n- Consider\n\nNever claim that a recommendation will definitely improve results.\n\n=== REQUIRED OUTPUT ===\n\nKey Observations:\n\nList only factual observations using the supplied metric values.\n\nValid Trends:\n\nCopy ONLY the valid trends provided above.\n\nActionable Recommendations:\n\nGive a maximum of 3 recommendations based directly on observable metric gaps.\n\nDo not invent causes or outcomes.\n\n=== FINAL VALIDATION ===\n\nBefore answering, verify:\n\n- No revenue statements.\n- No invented causes.\n- No invented trends.\n- No calculated percentages.\n- No comparison between unrelated metrics.\n- No unsupported business judgments.\n- No recommendation based only on assumptions.\n- Valid Trends contains only the supplied valid trends.\n\nReturn ONLY:\n\nKey Observations:\n\nValid Trends:\n\nActionable Recommendations:",
+        "options": {
+          "systemMessage": "- Identify meaningful increases, decreases, or unchanged patterns only when supported by the trend data.\n- Do not invent a trend when previous-period data is unavailable.\n- If previous-period data is zero or unavailable, explicitly state that a percentage comparison cannot be established."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        -144
+      ],
+      "id": "39a7a66d-6790-4f6b-ba41-1da589969647",
+      "name": "Generate Insights"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        240,
+        32
+      ],
+      "id": "39665c28-2032-43e3-a4e5-aa0f4c593004",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const analytics = $('Calculate Trends').first().json;\nconst insightsData = $('Generate Insights').first().json;\n\nreturn [{\n  json: {\n    company_id: analytics.company_id || '',\n    analysis_type: analytics.analysis_type || '',\n\n    date_from:\n      analytics.trend_period?.current_from || '',\n\n    date_to:\n      analytics.trend_period?.current_to || '',\n\n    metrics: {\n      total_leads: analytics.total_leads || 0,\n      qualified_leads: analytics.qualified_leads || 0,\n      total_opportunities: analytics.total_opportunities || 0,\n      won_opportunities: analytics.won_opportunities || 0,\n      lost_opportunities: analytics.lost_opportunities || 0,\n\n      total_quotes: analytics.total_quotes || 0,\n      total_appointments: analytics.total_appointments || 0,\n      total_follow_ups: analytics.total_follow_ups || 0,\n      total_campaigns: analytics.total_campaigns || 0,\n      total_reviews: analytics.total_reviews || 0,\n\n      conversions: analytics.conversions || 0,\n\n      lead_qualification_rate:\n        analytics.lead_qualification_rate || 0,\n\n      lead_to_opportunity_rate:\n        analytics.lead_to_opportunity_rate || 0,\n\n      opportunity_win_rate:\n        analytics.opportunity_win_rate || 0,\n\n      opportunity_loss_rate:\n        analytics.opportunity_loss_rate || 0,\n\n      quote_to_opportunity_rate:\n        analytics.quote_to_opportunity_rate || 0,\n\n      appointment_to_opportunity_rate:\n        analytics.appointment_to_opportunity_rate || 0,\n\n      overall_conversion_rate:\n        analytics.overall_conversion_rate || 0\n    },\n\n    trends: analytics.trends || {},\n\n    trend_period: analytics.trend_period || {},\n\n    trend_summary: analytics.trend_summary || {},\n\n    insights:\n      insightsData.output ||\n      insightsData.text ||\n      '',\n\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -144
+      ],
+      "id": "49996dbf-eb85-4653-96ad-ce111b918fb2",
+      "name": "Generate Analytics Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $('Generate Analytics Report').first().json;\n\nreturn [{\n  json: {\n    company_id: report.company_id,\n    analysis_type: report.analysis_type,\n\n    date_from:\n      report.trend_period?.current_from || '',\n\n    date_to:\n      report.trend_period?.current_to || '',\n\n    metrics: report.metrics || {},\n\n    trends: report.trends || {},\n\n    trend_period:\n      report.trend_period || {},\n\n    trend_summary:\n      report.trend_summary || {},\n\n    insights: report.insights || '',\n\n    generated_at:\n      report.generated_at || new Date().toISOString(),\n\n    status: 'completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -144
+      ],
+      "id": "99cb8044-351b-474d-a5f7-7d5b151def67",
+      "name": "Return Analytics Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const analytics = $('Calculate Analytics').first().json;\nconst trigger = $('When Executed by Another Workflow').first().json;\n\nconst rows = $('Merge All Analytics Data').all().map(item => {\n  const normalized = {};\n\n  for (const [key, value] of Object.entries(item.json)) {\n    normalized[key.trim()] = value;\n  }\n\n  return normalized;\n});\n\nconst dateFrom = trigger.date_from\n  ? new Date(trigger.date_from + 'T00:00:00')\n  : null;\n\nconst dateTo = trigger.date_to\n  ? new Date(trigger.date_to + 'T23:59:59.999')\n  : null;\n\nlet previousFrom = null;\nlet previousTo = null;\n\nif (dateFrom && dateTo) {\n  const periodLength = dateTo.getTime() - dateFrom.getTime();\n\n  previousTo = new Date(dateFrom.getTime() - 1);\n  previousFrom = new Date(previousTo.getTime() - periodLength);\n}\n\nfunction getRowDate(row) {\n  const value =\n    row.created_at ||\n    row.updated_at ||\n    row.scheduled_at ||\n    row.sent_at;\n\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  return isNaN(date.getTime()) ? null : date;\n}\n\nfunction isBetween(date, from, to) {\n  if (!date || !from || !to) return false;\n\n  return date >= from && date <= to;\n}\n\nfunction countRows(rowsToCheck, field, condition = null) {\n  return rowsToCheck.filter(row => {\n    if (!row[field]) return false;\n\n    if (condition) {\n      return condition(row);\n    }\n\n    return true;\n  }).length;\n}\n\nconst currentRows = dateFrom && dateTo\n  ? rows.filter(row =>\n      isBetween(getRowDate(row), dateFrom, dateTo)\n    )\n  : rows;\n\nconst previousRows = previousFrom && previousTo\n  ? rows.filter(row =>\n      isBetween(getRowDate(row), previousFrom, previousTo)\n    )\n  : [];\n\nconst currentLeads = countRows(currentRows, 'lead_id');\n\nconst currentQualifiedLeads = countRows(\n  currentRows,\n  'lead_id',\n  row =>\n    String(row.qualification_status || '').toLowerCase() === 'qualified'\n);\n\nconst currentOpportunities =\n  countRows(currentRows, 'opportunity_id');\n\nconst currentWon =\n  countRows(\n    currentRows,\n    'opportunity_id',\n    row =>\n      String(row.opportunity_stage || '').toLowerCase() === 'won'\n  );\n\nconst previousLeads = countRows(previousRows, 'lead_id');\n\nconst previousQualifiedLeads = countRows(\n  previousRows,\n  'lead_id',\n  row =>\n    String(row.qualification_status || '').toLowerCase() === 'qualified'\n);\n\nconst previousOpportunities =\n  countRows(previousRows, 'opportunity_id');\n\nconst previousWon =\n  countRows(\n    previousRows,\n    'opportunity_id',\n    row =>\n      String(row.opportunity_stage || '').toLowerCase() === 'won'\n  );\n\nfunction percentageChange(current, previous) {\n  if (previous === 0) {\n    return current > 0 ? null : 0;\n  }\n\n  return Number(\n    (((current - previous) / previous) * 100).toFixed(2)\n  );\n}\n\nreturn [{\n  json: {\n    ...analytics,\n\n    trend_period: {\n      current_from: trigger.date_from || '',\n      current_to: trigger.date_to || '',\n      previous_from: previousFrom\n        ? previousFrom.toISOString().split('T')[0]\n        : '',\n      previous_to: previousTo\n        ? previousTo.toISOString().split('T')[0]\n        : ''\n    },\n\n    trends: {\n      leads: {\n        current: currentLeads,\n        previous: previousLeads,\n        percentage_change:\n          percentageChange(currentLeads, previousLeads)\n      },\n\n      qualified_leads: {\n        current: currentQualifiedLeads,\n        previous: previousQualifiedLeads,\n        percentage_change:\n          percentageChange(\n            currentQualifiedLeads,\n            previousQualifiedLeads\n          )\n      },\n\n      opportunities: {\n        current: currentOpportunities,\n        previous: previousOpportunities,\n        percentage_change:\n          percentageChange(\n            currentOpportunities,\n            previousOpportunities\n          )\n      },\n\n      won_opportunities: {\n        current: currentWon,\n        previous: previousWon,\n        percentage_change:\n          percentageChange(currentWon, previousWon)\n      }\n    },\n\n    trend_summary: {\n      leads_increasing:\n        currentLeads > previousLeads,\n\n      qualified_leads_increasing:\n        currentQualifiedLeads > previousQualifiedLeads,\n\n      opportunities_increasing:\n        currentOpportunities > previousOpportunities,\n\n      wins_increasing:\n        currentWon > previousWon\n    },\n\n    trends_analyzed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -144
+      ],
+      "id": "e50af05c-4338-4530-aa5b-2e03c6575b23",
+      "name": "Calculate Trends"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "q4RVaiIxSADpvwaY",
+          "mode": "list",
+          "cachedResultName": "Analytics Reports",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "report_id": "={{ 'AN-' + $execution.id }}",
+            "company_id": "={{ $('Generate Analytics Report').first().json.company_id }}",
+            "analysis_type": "={{ $('Generate Analytics Report').first().json.analysis_type }}",
+            "date_from": "={{ $('Generate Analytics Report').first().json.date_from || $now.toISO() }}",
+            "date_to": "={{ $('Generate Analytics Report').first().json.date_to || $now.toISO() }}",
+            "metrics": "={{ JSON.stringify($('Generate Analytics Report').first().json.metrics) }}",
+            "trends": "={{ JSON.stringify($('Generate Analytics Report').first().json.trends) }}",
+            "trend_summary": "={{ JSON.stringify($('Generate Analytics Report').first().json.trend_summary) }}",
+            "insights": "={{ $('Generate Analytics Report').first().json.insights }}",
+            "generated_at": "={{ $('Generate Analytics Report').first().json.generated_at }}",
+            "status": "completed"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        -144
+      ],
+      "id": "0004c3f4-672e-49fb-ba0d-7f3addb44c4e",
+      "name": "Store Analytics Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Calculate Trends').first().json;\n\nconst trends = data.trends || {};\n\nconst trendLines = [];\n\nfunction addTrend(name, trend) {\n  if (!trend) return;\n\n  const change = trend.percentage_change;\n\n  if (change === null || change === undefined) {\n    return;\n  }\n\n  if (typeof change !== 'number') {\n    return;\n  }\n\n  if (change === 0) {\n    trendLines.push(`${name}: unchanged (0% change)`);\n  } else if (change > 0) {\n    trendLines.push(`${name}: increased by ${change}%`);\n  } else {\n    trendLines.push(`${name}: decreased by ${Math.abs(change)}%`);\n  }\n}\n\naddTrend('Leads', trends.leads);\naddTrend('Qualified Leads', trends.qualified_leads);\naddTrend('Opportunities', trends.opportunities);\naddTrend('Won Opportunities', trends.won_opportunities);\n\nreturn [{\n  json: {\n    ...data,\n\n    valid_trends:\n      trendLines.length > 0\n        ? trendLines.join('\\n')\n        : 'No valid trends can be established because previous-period data is unavailable.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -144
+      ],
+      "id": "2a0adcfe-e9b7-437e-989c-ab396bac34b4",
+      "name": "Prepare Trend Summary"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Leads Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Sales Opportunities",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Quotes Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Appointments Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Follow-up Activities",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Campaign Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Reviews Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Support Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Leads Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sales Opportunities": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Quotes Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Appointments Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Get Follow-up Activities": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Get Campaign Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Get Reviews Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Get Support Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Analytics Data",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    },
+    "Merge All Analytics Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Analytics": {
+      "main": [
+        [
+          {
+            "node": "Calculate Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Insights",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Insights": {
+      "main": [
+        [
+          {
+            "node": "Generate Analytics Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Analytics Report": {
+      "main": [
+        [
+          {
+            "node": "Store Analytics Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Trends": {
+      "main": [
+        [
+          {
+            "node": "Prepare Trend Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Analytics Report": {
+      "main": [
+        [
+          {
+            "node": "Return Analytics Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Trend Summary": {
+      "main": [
+        [
+          {
+            "node": "Generate Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d06de06d-7dc1-4832-9ac7-dceebb0de94c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "ksi30BTbw45gGBKN",
+  "tags": []
+}
