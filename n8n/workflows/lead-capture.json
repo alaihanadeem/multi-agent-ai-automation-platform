@@ -1,0 +1,1913 @@
+{
+  "name": "Lead Capture subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Message: {{ $('When Executed by Another Workflow').first().json.user_message }}\n\nTask: Parse the user message into the requested output JSON format. If the user is confirming details, set confirmation = true.",
+        "options": {
+          "systemMessage": "You are a Lead Extraction AI for a cybersecurity company.\n\nYOUR ONLY JOB:\nExtract lead information and appointment information from the user's message.\n\nYou are NOT responsible for:\n\n* answering company questions\n* sales conversations\n* qualifying leads\n* creating bookings\n* calling tools\n* searching company information\n\nIMPORTANT:\nYou must extract information yourself from the user's message.\n\nNEVER call, invoke, simulate, or generate any tool or function.\n\nNEVER generate tool-call JSON.\n\nNEVER generate:\n{\"name\":\"company_DNA\",\"parameters\":{}}\n\nNEVER generate:\n{\"name\":\"lead_extraction\",\"parameters\":{}}\n\nReturn ONLY one valid JSON object.\n\nDo not return markdown.\nDo not return explanations.\nDo not return conversational text.\nDo not return tool-call syntax.\n\nOUTPUT FORMAT:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"new_lead\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nCONFIRMATION INPUT HANDLING:\n\nIf the user message is a confirmation (e.g., \"Yes\", \"Yes, these details are correct\", \"Correct\", \"That is right\"):\n\nSet:\n- \"confirmation\": true\n- \"intent\": \"new_lead\"\n\nKeep all missing fields as empty strings \"\".\nDo NOT refuse to process short or confirmation-only messages.\nReturn the standard output JSON with \"confirmation\": true.\n\nLEAD INFORMATION:\n\nExtract only information explicitly provided by the user.\n\nExamples:\n\n\"My name is Ali\"\n→ name = \"Ali\"\n\n\"My email is ali@gmail.com\"\n→ email = \"ali@gmail.com\"\n\n\"My phone is 03001234567\"\n→ phone = \"03001234567\"\n\n\"I'm in Lahore\"\n→ region = \"Lahore\"\n\n\"I need cloud security assessment\"\n→ requested_service = \"Cloud Security Assessment\"\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nEMAIL FORMAT — VERY IMPORTANT:\n\nThe email field MUST contain ONLY the raw email address.\n\nCorrect:\n\"email\": \"ali@gmail.com\"\n\nIncorrect:\n\"email\": \"[ali@gmail.com](mailto:ali@gmail.com)\"\n\nIncorrect:\n\"email\": \"Email: ali@gmail.com\"\n\nIncorrect:\n\"email\": \"mailto:ali@gmail.com\"\n\nNEVER use Markdown links.\n\nNEVER use mailto links.\n\nNEVER add labels, brackets, angle brackets, formatting, or extra text to the email value.\n\nWhen the user provides an email address, extract ONLY the plain email address.\n\nIf information is not provided, use an empty string \"\".\n\nNever invent information.\n\nCONSENT:\n\nSet consent_to_contact = true ONLY when the user explicitly gives permission to be contacted.\n\nExamples:\n\"You can contact me\"\n\"Yes, you can contact me\"\n\"You may contact me\"\n\nSet consent_to_contact = false ONLY when the user explicitly refuses contact.\n\nExamples:\n\"Don't contact me\"\n\"Do not contact me\"\n\"Don't call me\"\n\nOtherwise:\nconsent_to_contact = null\n\nIMPORTANT:\nConsent is NOT confirmation.\n\nExample:\n\n\"You can contact me\"\n\n→ consent_to_contact = true\n→ confirmation = false\n\nCONFIRMATION:\n\nSet confirmation = true ONLY when the user explicitly confirms previously collected lead details.\n\nExamples:\n\"Yes, that's correct\"\n\"Correct\"\n\"I confirm\"\n\"Everything is correct\"\n\"Yes these details are correct\"\n\"That's right\"\n\"Yes I confirm\"\n\nProviding new lead information is NOT confirmation.\n\nProviding contact permission is NOT confirmation.\n\nIf the user does not explicitly confirm:\nconfirmation = false\n\nINTENT:\n\nIf the user requests a cybersecurity service or provides lead information:\nintent = \"new_lead\"\n\nIf the user requests or provides appointment information:\nintent = \"new_lead\"\n\nIf the user only asks a general company/business question:\nintent = \"information_request\"\n\nAPPOINTMENT:\n\nSet appointment_request = true when the user asks to:\n\n* book an appointment\n* schedule an appointment\n* make an appointment\n* book a consultation\n* schedule a consultation\n* book a meeting\n* schedule a meeting\n* make a booking\n* schedule a booking\n\nOtherwise:\nappointment_request = false\n\nWhen appointment_request = true:\n\nExtract appointment_date only if explicitly provided.\n\nExtract appointment_time only if explicitly provided.\n\nExtract all lead information explicitly provided in the same message.\n\nNever invent missing information.\n\nDATE:\n\nCopy the date exactly as provided.\n\nExamples:\n\n\"tomorrow\"\n→ appointment_date = \"tomorrow\"\n\n\"26 September\"\n→ appointment_date = \"26 September\"\n\n\"26 September 2026\"\n→ appointment_date = \"26 September 2026\"\n\nDo not calculate or convert the date.\n\nTIME:\n\nCopy the time exactly as provided.\n\nExamples:\n\n\"3 PM\"\n→ appointment_time = \"3 PM\"\n\n\"4:30 PM\"\n→ appointment_time = \"4:30 PM\"\n\n\"15:00\"\n→ appointment_time = \"15:00\"\n\nDo not invent a time.\n\nMULTI-MESSAGE CONTEXT:\n\nIf previous conversation context contains previously collected lead or appointment information, preserve it.\n\nIf the current message adds new information, update only the fields that were provided.\n\nNever invent information that was never provided.\n\nSOURCE:\n\nOnly set source when explicitly provided by the user.\n\nExample:\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\nOtherwise:\nsource = \"\"\n\nCAMPAIGN:\n\nOnly set campaign when explicitly provided by the user.\n\nExample:\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nOtherwise:\ncampaign = \"\"\n\nCOMPANY INFORMATION:\n\nDo NOT use any company information tool for lead extraction.\n\nDo NOT call Company DNA.\n\nDo NOT call company_DNA.\n\nDo NOT use Company DNA to determine:\n\n* requested service\n* lead details\n* appointment details\n* confirmation\n* consent\n* contact information\n\nIf the user says:\n\n\"I need Cloud Security Assessment\"\n\nExtract:\n\n\"requested_service\": \"Cloud Security Assessment\"\n\nDo NOT call Company DNA to verify whether this service exists.\n\nGREETING:\n\nIf the user only says:\n\n\"hi\"\n\"hello\"\n\"hey\"\n\"salam\"\n\nThen return:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"information_request\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nFINAL VALIDATION:\n\nBefore returning the answer, verify:\n\n1. The response is valid JSON.\n2. There is no markdown.\n3. There is no explanation.\n4. There is no tool call.\n5. There is no \"company_DNA\".\n6. There is no \"lead_extraction\".\n7. There is no \"parameters\".\n8. All required fields exist.\n9. All 15 output fields are present.\n10. Boolean fields contain true or false.\n11. consent_to_contact is true, false, or null.\n12. The email field contains ONLY a plain raw email address.\n13. The email field contains no Markdown.\n14. The email field contains no mailto:.\n15. The email field contains no brackets, labels, or extra text.\n16. Do not invent missing information.\n\nFINAL RULE:\n\nRETURN ONLY THE JSON OBJECT.\n\nNEVER CALL A TOOL.\n\nNEVER GENERATE A TOOL CALL.\n\nNEVER GENERATE company_DNA.\n\nNEVER GENERATE lead_extraction.\n\nNEVER GENERATE parameters.\n\nNEVER RETURN MARKDOWN.\n\nNEVER RETURN EXPLANATIONS.\n\nNEVER FORMAT EMAIL ADDRESSES AS MARKDOWN LINKS.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1344,
+        192
+      ],
+      "id": "20d2842e-f1e1-4533-8e02-b73bf53fb3ab",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When Executed by Another Workflow').first().json.session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -1328,
+        640
+      ],
+      "id": "4e0fa2fc-64a5-4ab2-a36f-6b7256b5d85a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($json.output || $json.text || '').trim();\n\nif (!raw) {\n  throw new Error('Empty AI Agent response');\n}\n\nlet cleaned = raw\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nlet data = {};\n\ntry {\n  data = JSON.parse(cleaned);\n} catch (error) {\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n\n  if (match) {\n    try {\n      data = JSON.parse(match[0]);\n    } catch (e) {\n      data = {};\n    }\n  }\n}\n\nconst lead = data.parameters || data;\n\nfunction cleanValue(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim().toLowerCase() === 'null'\n  ) {\n    return '';\n  }\n  return String(value).trim();\n}\n\nconst triggerJson = $('When Executed by Another Workflow').first()?.json || {};\n\nconst userMessage = String(\n  $json.user_message ||\n  $json.chatInput ||\n  $json.text ||\n  $json.message ||\n  triggerJson.user_message ||\n  triggerJson.chatInput ||\n  ''\n).trim();\n\nconst lower = userMessage.toLowerCase();\n\nconst leadKeywords = [\n  'i need', 'i want', 'i am interested', 'interested in', 'looking for',\n  'my name is', 'my email is', 'my phone is', 'contact me',\n  'security assessment', 'cloud security', 'penetration testing',\n  'cybersecurity service', 'cyber security service'\n];\n\nconst messageIsLead = leadKeywords.some(keyword => lower.includes(keyword));\n\nconst confirmationPhrases = [\n  'yes', 'yes, that is correct', \"yes, that's correct\",\n  'yes these details are correct', 'yes, these details are correct',\n  'correct', 'that is correct', \"that's correct\", 'that is right',\n  \"that's right\", 'i confirm', 'confirmed', 'go ahead', 'everything is correct'\n];\n\nconst userConfirmed = confirmationPhrases.some(phrase => lower === phrase);\n\nconst aiAppointment = String(lead.intent || '').toLowerCase() === 'appointment' || lead.appointment_request === true;\nconst appointmentRegex = /book.*appointment|schedule.*appointment|make.*appointment|arrange.*appointment|book.*consultation|schedule.*consultation|schedule.*meeting|book.*meeting/i;\nconst isAppointment = aiAppointment || appointmentRegex.test(lower);\n\nconst isLead = String(lead.intent || '').toLowerCase() === 'new_lead' || messageIsLead || userConfirmed;\n\nconst confirmation = lead.confirmation === true || userConfirmed;\n\nlet consent = null;\nif (lead.consent_to_contact === true) {\n  consent = true;\n} else if (lead.consent_to_contact === false) {\n  consent = false;\n}\n\nconst optOutPhrases = [\n  'do not contact', \"don't contact\", 'dont contact', 'stop contacting',\n  'remove me', 'unsubscribe', 'no contact', 'do not call', \"don't call\", 'dont call'\n];\nconst optOut = optOutPhrases.some(phrase => lower.includes(phrase));\nif (optOut) {\n  consent = false;\n}\n\nconst handoffPhrases = [\n  'talk to a human', 'speak to a human', 'talk to someone', 'speak to someone',\n  'connect me to a human', 'connect me to an agent', 'connect me with an agent',\n  'human agent', 'real person', 'speak with a person', 'talk with a person', 'human support'\n];\nconst humanHandoff = handoffPhrases.some(phrase => lower.includes(phrase));\n\nlet intent = lead.intent || (isAppointment ? 'appointment' : 'new_lead');\n\nconst userName = cleanValue(lead.name) || cleanValue(triggerJson.customer_name) || cleanValue(triggerJson.name);\nconst serviceName = cleanValue(lead.requested_service) || cleanValue(triggerJson.requested_service);\n\nconst nameFormatted = userName ? ` ${userName}` : '';\nconst serviceFormatted = serviceName ? ` for your ${serviceName}` : '';\n\nlet assistantMessage = cleanValue(lead.assistant_message);\n\nif (!assistantMessage) {\n  if (isAppointment) {\n    assistantMessage = `Hi${nameFormatted}! We have noted your appointment request. Our team will coordinate with you shortly.`;\n  } else {\n    assistantMessage = `Hi${nameFormatted}! We have received your inquiry${serviceFormatted}. Our team will get in touch with you shortly.`;\n  }\n}\n\nreturn [{\n  json: {\n    name: userName,\n    email: cleanValue(lead.email) || cleanValue(triggerJson.email),\n    phone: cleanValue(lead.phone) || cleanValue(triggerJson.phone),\n    requested_service: serviceName,\n    region: cleanValue(lead.region) || cleanValue(triggerJson.region),\n    consent_to_contact: consent,\n    confirmation,\n    opt_out: optOut,\n    human_handoff: humanHandoff,\n    intent,\n    appointment_request: isAppointment,\n    appointment_date: cleanValue(lead.appointment_date) || cleanValue(triggerJson.appointment_date),\n    appointment_time: cleanValue(lead.appointment_time) || cleanValue(triggerJson.appointment_time),\n    source: cleanValue(lead.source) || cleanValue(triggerJson.source),\n    campaign: cleanValue(lead.campaign) || cleanValue(triggerJson.campaign),\n    assistant_message: assistantMessage\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -976,
+        192
+      ],
+      "id": "aafe9c0e-3d04-4cf4-8d60-ab041d617e8a",
+      "name": "Normalize Lead Details",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nlet email = String(data.email || '').trim();\n\nemail = email.replace(/^\\[([^\\]]+)\\]\\(mailto:[^)]+\\)$/i, '$1');\nemail = email.replace(/^mailto:/i, '').trim();\n\nconst phone = String(data.phone || '').trim();\n\nconst hasContact =\n  email !== '' ||\n  phone !== '';\n\nconst complete =\n  String(data.name || '').trim() !== '' &&\n  String(data.requested_service || '').trim() !== '' &&\n  hasContact &&\n  String(data.region || '').trim() !== '' &&\n  data.consent_to_contact === true &&\n  data.opt_out !== true;\n\nconst leadKey =\n  email !== ''\n    ? email.toLowerCase()\n    : phone.toLowerCase();\n\nreturn [{\n  json: {\n    lead_id: 'LEAD-' + String($execution.id),\n    company_id: 'COMP001',\n    session_id: String($execution.id),\n\n    name: String(data.name || '').trim(),\n    email: email,\n    phone: phone,\n\n    requested_service: String(data.requested_service || '').trim(),\n    region: String(data.region || '').trim(),\n\n    consent_to_contact: data.consent_to_contact === true,\n    confirmation: data.confirmation === true,\n    opt_out: data.opt_out === true,\n\n    intent: data.intent || 'new_lead',\n    qualification_status: complete ? 'pending_review' : 'incomplete',\n\n    source: String(data.source || '').trim(),\n    campaign: String(data.campaign || '').trim(),\n\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString(),\n\n    lead_complete: complete,\n    lead_key: leadKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        352
+      ],
+      "id": "273e0152-c4c2-4dd9-a9ae-a6e4b56fff03",
+      "name": "Prepare Lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "79fea410-8b6f-4661-bf47-11f2e0c7cd86",
+              "leftValue": "={{ !!$('Prepare Lead').first().json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "24dcebd3-2be8-4515-a251-558bd6700257",
+              "leftValue": "={{ !!$('Prepare Lead').first().json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6a908b35-26bd-4dfd-b63e-470dbcf70299",
+              "leftValue": "={{ !!$('Prepare Lead').first().json.requested_service }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1520,
+        432
+      ],
+      "id": "3ed82604-8535-4196-ab28-f4ea804797fe",
+      "name": "Lead Complete?"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Prepare Lead').first().json.lead_key }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1984,
+        272
+      ],
+      "id": "0c4be35d-9a9c-4d0b-8f49-2cdf9b18c841",
+      "name": "Check Existing Lead",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a7a0094-7ada-46d0-9432-d14c4ae1371a",
+              "leftValue": "={{ Object.keys($('Check Existing Lead').first().json).length > 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2208,
+        272
+      ],
+      "id": "2b0db19a-a40d-4d94-afbe-cecdbd9f3188",
+      "name": "Existing Lead?"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": "={{ $('Prepare Lead').first().json.consent_to_contact }}",
+            "lead_id": "={{ $('Prepare Lead').first().json.lead_id }}",
+            "company_id": "= {{ $('Prepare Lead').first().json.company_id }}",
+            "session_id": "= {{ $('Prepare Lead').first().json.session_id }}",
+            "name": "={{ $('Prepare Lead').first().json.name }}",
+            "email": "= {{ $('Prepare Lead').first().json.email }}",
+            "phone": "={{ $('Prepare Lead').first().json.phone }}",
+            "requested_service": "={{ $('Prepare Lead').first().json.requested_service }}",
+            "region": "={{ $('Prepare Lead').first().json.region }}",
+            "intent": "={{ $('Prepare Lead').first().json.intent }}",
+            "qualification_status": "={{ $('Prepare Lead').first().json.qualification_status }}",
+            "source": "={{ $('Prepare Lead').first().json.source }}",
+            "created_at": "={{ $('Prepare Lead').first().json.created_at }}",
+            "updated_at": "={{ $('Prepare Lead').first().json.updated_at }}",
+            "lead_key": "={{ $('Prepare Lead').first().json.lead_key }}",
+            "campaign": "={{ $('Prepare Lead').first().json.campaign }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2416,
+        416
+      ],
+      "id": "3e7933fc-f9c3-41f9-a3ed-48460181a2e3",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Prepare Lead').first().json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": "={{ $('Prepare Lead').first().json.consent_to_contact }}",
+            "name": "={{ $('Prepare Lead').first().json.name }}",
+            "email": "={{ $('Prepare Lead').first().json.email }}",
+            "phone": "={{ $('Prepare Lead').first().json.phone }}",
+            "requested_service": "={{ $('Prepare Lead').first().json.requested_service }}",
+            "region": "={{ $('Prepare Lead').first().json.region }}",
+            "intent": "={{ $('Prepare Lead').first().json.intent }}",
+            "qualification_status": "={{ $('Mark Qualified').first().json.qualification_status }}",
+            "source": "={{ $('Prepare Lead').first().json.source }}",
+            "lead_id": "={{ $('Prepare Lead').first().json.lead_id }}",
+            "company_id": "={{ $('Prepare Lead').first().json.company_id }}",
+            "session_id": "={{ $('Prepare Lead').first().json.session_id }}",
+            "updated_at": "={{ $('Prepare Lead').first().json.updated_at }}",
+            "campaign": "={{ $('Prepare Lead').first().json.campaign }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2416,
+        160
+      ],
+      "id": "05a19ca6-567b-4898-9eb1-c6f4e87e4516",
+      "name": "update lead table"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cbca9863-d5f7-46fa-be06-ebd1c163d32a",
+              "name": "qualification_status",
+              "value": "qualified",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        560,
+        432
+      ],
+      "id": "c889a9e0-8de3-49c2-9609-2bf7ba821e35",
+      "name": "Qualify Lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e31ce600-d21c-462a-8724-884f9c483613",
+              "leftValue": "={{ $('Qualify Lead').first().json.qualification_status }}",
+              "rightValue": "qualified",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        432
+      ],
+      "id": "8e590dc4-5c2d-465c-8fe1-8b13cb5feeb0",
+      "name": "Check Qualification"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a7ff686-8aa3-4dc2-ad65-c7bf782a1924",
+              "name": "qualification_status",
+              "value": "qualified",
+              "type": "string"
+            },
+            {
+              "id": "3b667b81-da6f-4d51-8179-f03adcbfc993",
+              "name": "updated_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "5ffa5934-c2e2-40d4-90dc-d712952be120",
+              "name": "message",
+              "value": "Lead qualified successfully.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1168,
+        256
+      ],
+      "id": "cc77b319-b5b5-4ad6-8185-d39ab78eeb61",
+      "name": "Mark Qualified"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62032c44-eef6-480c-8960-7d17d1ab8951",
+              "name": "qualification_status",
+              "value": "incomplete",
+              "type": "string"
+            },
+            {
+              "id": "1cdd1d16-b6c6-4b77-b109-b980f6a4b1eb",
+              "name": "updated_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "71ac1180-044a-4621-99d8-505e2db54b21",
+              "name": "message",
+              "value": "Please provide the missing information to continue.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        992,
+        448
+      ],
+      "id": "a0a7038f-b9a6-4a4d-a2ef-18b21e06affb",
+      "name": "Mark Incomplete"
+    },
+    {
+      "parameters": {
+        "message": "Some required information is missing. Please provide the missing details so we can continue.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        624
+      ],
+      "id": "6d490441-5391-4982-948b-c3a7b57408f0",
+      "name": "failed result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c3f85e33-0ddd-41b8-ac9b-e5f91d3a161b",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "new_lead",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -336,
+        368
+      ],
+      "id": "275ddf40-ffa5-485d-85f4-8d6bee91c94d",
+      "name": "Is New Lead?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8318b882-b5e9-4d3f-9b40-d4bc71d3e981",
+              "leftValue": "={{ !!$json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1840,
+        128
+      ],
+      "id": "e48d451a-0027-4013-8075-e1552da77813",
+      "name": "Is Information Request?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "626bb8ae-06d3-47d6-894d-73ca5e321225",
+              "name": "chatInput",
+              "value": "={{ $('When Executed by Another Workflow').first().json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "832bbeed-49b0-4d3e-b10f-5d32efe05e87",
+              "name": "company_id",
+              "value": "COMP001",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -2048,
+        128
+      ],
+      "id": "d6467151-b2ba-43b5-8119-bdad08bb68c7",
+      "name": "company id"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5bcaf725-b062-4b05-9be5-a2ad9e3b0af3",
+              "leftValue": "={{ $('Prepare Lead').first().json.confirmation }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        416
+      ],
+      "id": "c45a83d9-c85a-417d-84df-6aeff1626715",
+      "name": "Confirmation?"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        416
+      ],
+      "id": "e1b86614-be3b-4352-9068-5a83fdf624de",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5c8cea22-b6d7-4f54-9c1f-baa7ae8f1850",
+              "leftValue": "={{ $json.opt_out }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        352
+      ],
+      "id": "559f55d7-f075-457d-9ff5-1303d5c54fca",
+      "name": "Opt Out?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "29d7c4cb-d065-455c-8068-583492f53066",
+              "name": "opt_out",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "7a84ebfd-8569-4e9b-8fe8-a2e246d6fa1f",
+              "name": "consent_to_contact",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "87370714-d18e-4eac-ae5f-3b9ef1f9c678",
+              "name": "qualification_status",
+              "value": "opted_out",
+              "type": "string"
+            },
+            {
+              "id": "a70cbb84-3e72-409c-85ff-591985142f2a",
+              "name": "assistant_message",
+              "value": "You have been opted out of further contact.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        320,
+        112
+      ],
+      "id": "ad9b1fe5-5091-4b58-82e2-6d9cfbb35a5c",
+      "name": "Handle Opt Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8cdfa104-bea5-404a-a29c-eefa96f0af2e",
+              "leftValue": "={{ $json.human_handoff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -688,
+        192
+      ],
+      "id": "1469421c-fbb9-47bf-9546-10a45d0523f8",
+      "name": "Human Handoff?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c67e4f1-2c73-4376-86a0-6a9762010b38",
+              "name": "human_handoff",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "9cc22227-20a1-47d7-9f25-b1e88d30bafe",
+              "name": "assistant_message",
+              "value": "I'll connect you with a human team member for further assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -192,
+        144
+      ],
+      "id": "20ab7e13-ece7-4c86-a1f7-a3cf3b7dac45",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "message": "I’ll connect you with a human team member for further assistance.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        144
+      ],
+      "id": "e57d3926-0f3a-4d22-9e2c-83af67395760",
+      "name": "Chat1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3d844a0a-e8ac-4af7-8169-8d9e9cdbc3be",
+              "leftValue": "={{ $('When Executed by Another Workflow').first().json.user_message }}",
+              "rightValue": "human",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1600,
+        112
+      ],
+      "id": "a0797a6c-e119-4208-972b-32bc204e26af",
+      "name": "Human Handoff?1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a01d2-f183-4a50-91b2-a8a10d98b623",
+              "name": "response",
+              "value": "Sure, I'll connect you with a human representative. Please wait for assistance.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1216,
+        -64
+      ],
+      "id": "a9a825cf-1d86-418e-9369-fc4b4bd92c64",
+      "name": "Handle Human Handoff1"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.response }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        -64
+      ],
+      "id": "073449f8-9b37-43c9-a0fe-10c76881945e",
+      "name": "Chat2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst summary = [\n  `Name: ${data.name || ''}`,\n  `Email: ${data.email || ''}`,\n  `Phone: ${data.phone || ''}`,\n  `Service: ${data.requested_service || ''}`,\n  `Region: ${data.region || ''}`,\n  `Consent: ${data.consent_to_contact === true ? 'Yes' : 'No'}`,\n  `Lead ID: ${data.lead_id || ''}`,\n  `Source: ${data.source || ''}`,\n  `Campaign: ${data.campaign || ''}`\n].join('\\n');\n\nreturn [{\n  json: {\n    ...data,\n    lead_summary: summary\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        304
+      ],
+      "id": "8b5790ad-e2f3-421c-87b6-51e4d8faa669",
+      "name": "Generate lead summary"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4c8d4e9-928d-4987-8ae2-10957558f7fd",
+              "name": "lead_route",
+              "value": "sales",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1408,
+        16
+      ],
+      "id": "2bbbbbba-5407-4c36-a8cb-9f4e4c38f921",
+      "name": "Route Qualified Lead"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lead_route }}",
+                    "rightValue": "sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0c449cc5-7f26-4695-824f-974900d21a7a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1616,
+        16
+      ],
+      "id": "7fc10eb0-3ec6-47a8-ac88-e4e8bce536d6",
+      "name": "Route Lead"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "34d86dbd-c44e-49da-a203-2c99e6ddacf9",
+              "name": "name",
+              "value": "={{ $('Prepare Lead').first().json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "883e55ba-98d2-400c-9ba4-91fb43346e74",
+              "name": "email",
+              "value": "={{ $('Prepare Lead').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "80b6f7d7-cd38-4101-a131-e160fa4292f2",
+              "name": "phone",
+              "value": "={{ $('Prepare Lead').first().json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "db9d3f09-59f9-4dad-a13e-d920649ac7eb",
+              "name": "requested_service",
+              "value": "={{ $('Prepare Lead').first().json.requested_service }}",
+              "type": "string"
+            },
+            {
+              "id": "f400207a-6a5a-408e-8534-f099e7c896bf",
+              "name": "region",
+              "value": "={{ $('Prepare Lead').first().json.region }}",
+              "type": "string"
+            },
+            {
+              "id": "03cdb11a-5251-4471-bfa3-fac1261f327c",
+              "name": "source",
+              "value": "={{ $('Prepare Lead').first().json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "3d39e945-ab83-44b3-a4d6-1a6258fbdf70",
+              "name": "campaign",
+              "value": "={{ $('Prepare Lead').first().json.campaign }}",
+              "type": "string"
+            },
+            {
+              "id": "3a0a5a0f-7f5b-4973-9461-eb4493825504",
+              "name": "assigned_team",
+              "value": "Sales",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1840,
+        16
+      ],
+      "id": "c5980048-951a-4313-8a8c-f2680147e851",
+      "name": "Prepare Sales Lead"
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@company.com",
+        "toEmail": "your-email@company.com",
+        "subject": "New Qualified Lead",
+        "emailFormat": "text",
+        "text": "=New Qualified Lead Received\n\nName: {{ $('Prepare Sales Lead').item.json.name }}\nEmail: {{ $('Prepare Sales Lead').item.json.email }}\nPhone: {{ $('Prepare Sales Lead').item.json.phone }}\nService: {{ $('Prepare Sales Lead').item.json.requested_service }}\nRegion: {{ $('Prepare Sales Lead').item.json.region }}\nSource: {{ $('Prepare Sales Lead').item.json.source }}\nCampaign: {{ $('Prepare Sales Lead').item.json.campaign }}\nAssigned Team: {{ $('Prepare Sales Lead').item.json.assigned_team }}",
+        "options": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2064,
+        16
+      ],
+      "id": "161b0b11-36e9-4b79-b0ad-1766ace9a96d",
+      "name": "Send an Email",
+      "credentials": {
+        "smtp": {
+          "id": "Vs2FLFiSJTdcgauQ",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "name": "={{ $json.name || $('Prepare Lead').first().json.name || $('Normalize Lead Details').first().json.name || \"Confirmed Lead\" }}",
+        "additionalFields": {
+          "emails": {
+            "emailProperties": [
+              {
+                "value": "={{ $json.email || $('Prepare Lead').first().json.email || $('Normalize Lead Details').first().json.email || \"no-email@example.com\" }}"
+              }
+            ]
+          },
+          "phones": {
+            "phoneProperties": [
+              {
+                "value": "={{ $('Prepare Sales Lead').first().json.phone }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        16
+      ],
+      "id": "43e65dd1-9380-419f-8130-ca907a5c8bbe",
+      "name": "Create a person",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pipedriveApi": {
+          "id": "PkZke055E9ea5wn7",
+          "name": "Pipedrive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2512,
+        16
+      ],
+      "id": "e8f882df-1330-4bbf-8bf5-2b709906c14c",
+      "name": "Automatic Follow-up Wait"
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@company.com",
+        "toEmail": "={{ $json.email || $json.person_id?.email || $('Prepare Sales Lead').first()?.json?.email || $('Normalize Lead Details').first()?.json?.email || $('When Executed by Another Workflow').first()?.json?.email || '' }}",
+        "subject": "Following Up on Your Cybersecurity Request",
+        "emailFormat": "text",
+        "text": "=Hi {{ $json.name || $('Prepare Sales Lead').first()?.json?.name || 'there' }},\n\nJust following up on your request for {{ $json.requested_service || $('Prepare Sales Lead').first()?.json?.requested_service || 'our cybersecurity services' }}.\n\nIf you would like to continue, please reply to this email and our Sales team will assist you.\n\nBest regards,\nSales Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2992,
+        -112
+      ],
+      "id": "f5ffd716-1175-4f11-9306-680c8f3c38d4",
+      "name": "Send an Email1",
+      "credentials": {
+        "smtp": {
+          "id": "Vs2FLFiSJTdcgauQ",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "09752ae5-61f2-47b1-9aed-d5d0011ccebe",
+              "leftValue": "={{ $('Normalize Lead Details').first().json.appointment_request }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        416
+      ],
+      "id": "fa251a51-7175-4937-899f-2e0b43de2bc8",
+      "name": "appointment req?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    output: $json.output\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        208
+      ],
+      "id": "8364a5d2-7b8d-47da-adb1-38f0ab5508e5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UtGFb96PPXhDIN10",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Sales Agent sybworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": "={{ $json.consent_to_contact }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "name": "={{ $json.name || $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "requested_service": "{{ $json.requested_service",
+            "region": "={{ $json.region || '' }}",
+            "intent": "={{ $json.intent }}",
+            "qualification_status": "={{ $json.qualification_status || $('When Executed by Another Workflow').first().json.qualification_status || 'unknown' }}",
+            "lead_summary": "={{ $json.lead_summary || (($json.name || $json.customer_name) + ' wants a quote for ' + $json.requested_service + ' (' + ($json.region || 'region not given') + ').') }}",
+            "criteria": "Prepare a quote for the requested service using only approved company pricing. Do not promise discounts or final prices without approval. Ask for any missing details (scope, size, timeline).",
+            "chatInput": "=Customer asked: \"{{ $json.customer_message }}\". Prepare a quote for {{ $json.requested_service }}."
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3072,
+        304
+      ],
+      "id": "cff34ac8-3bb0-4e82-832c-e6388fcaa5d5",
+      "name": "Call Sales Agent",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "COMP001"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        496
+      ],
+      "id": "e4fd1c46-cb8c-415e-8260-87af3f150ae7",
+      "name": "Company DNA"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "company_id"
+            },
+            {
+              "name": "company_name"
+            },
+            {
+              "name": "industry"
+            },
+            {
+              "name": "services"
+            },
+            {
+              "name": "pricing"
+            },
+            {
+              "name": "policies"
+            },
+            {
+              "name": "workflows"
+            },
+            {
+              "name": "permissions"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "user_message"
+            },
+            {
+              "name": "lead_id"
+            },
+            {
+              "name": "customer_name"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "phone"
+            },
+            {
+              "name": "requested_service"
+            },
+            {
+              "name": "assistant_message"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2320,
+        128
+      ],
+      "id": "89d8e733-f4ef-42f1-9447-0324d75659a0",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d58119ef-5fe6-47e4-8d2d-bd55dfcce3b4",
+              "name": "assistant_message",
+              "value": "=I have your details: {{ $('Prepare Lead').first().json.name }}, {{ $('Prepare Lead').first().json.email }}, requesting {{ $('Prepare Lead').first().json.requested_service }}. Are these details correct?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2176,
+        464
+      ],
+      "id": "b922721e-26e5-4f50-82a4-982ad505dc37",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5b145cf-cb9d-4f48-b6f5-c32d5023c7dd",
+              "name": "assistant_message",
+              "value": "You have been opted out of further contact. We will not use your information for follow-up.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        640,
+        16
+      ],
+      "id": "9da11517-2b3e-409b-88a8-6351c8792343",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0c63dba1-b07f-47fa-a981-2eedafa52e80",
+              "leftValue": "={{ $json.email || $('Prepare Sales Lead').first()?.json?.email || $('Prepare Lead').first()?.json?.email || $('Normalize Lead Details').first()?.json?.email || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2736,
+        16
+      ],
+      "id": "168e18f4-3a17-4dfa-aea0-da3519010e80",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn [{\n  json: {\n    ...input,\n    assistant_message: input.assistant_message || \"Thank you! Your lead has been successfully captured and processed.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "40e3c512-36bb-46ba-b290-34e037f6da09",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn [{\n  json: {\n    ...input,\n    assistant_message: input.assistant_message || \"Thank you! Your lead has been successfully captured and processed.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "6d1dc048-6c1a-4b23-96be-898208575b12",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet nameVal = '';\nlet serviceVal = '';\nlet fullText = '';\n\nfor (let item of items) {\n    const json = item.json || {};\n    const output = json.output || json;\n    \n    if (!nameVal) nameVal = output.name || json.name || output.customer_name || json.customer_name || '';\n    if (!serviceVal) serviceVal = output.requested_service || json.requested_service || output.services || json.services || '';\n    \n    const textToCheck = json.chatInput || json.message || json.text || JSON.stringify(json);\n    if (textToCheck) fullText += \" \" + textToCheck;\n}\n\nif (!nameVal && fullText) {\n    const nameMatch = fullText.match(/my name is\\s+([a-zA-Z]+)/i);\n    if (nameMatch) nameVal = nameMatch[1];\n}\n\nif (!serviceVal && fullText) {\n    if (fullText.toLowerCase().includes('cyber defense platform')) {\n        serviceVal = 'Cyber Defense Platform';\n    } else if (fullText.toLowerCase().includes('cyber security')) {\n        serviceVal = 'Cyber Security Service';\n    }\n}\n\nconst userName = nameVal ? ` ${nameVal}` : '';\nconst service = serviceVal ? ` for your ${serviceVal}` : '';\n\nconst message = `Hi${userName}! We have received your inquiry${service}. Our team will get in touch with you shortly.`;\n\nreturn [{ json: { assistant_message: message } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        96
+      ],
+      "id": "5e18e383-2c53-4af5-8a05-fd1e582f8bf5",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3616,
+        96
+      ],
+      "id": "30476983-a2c4-4ad0-97f4-c4baeb25dea3",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "yoVlUDKKgzu2beUd",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Booking AGent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $('Normalize Lead Details').first().json.phone }}",
+            "company_id": "={{ $('When Executed by Another Workflow').item.json.company_id }}",
+            "customer_name": "={{ $('When Executed by Another Workflow').item.json.customer_name }}",
+            "email": "={{ $('When Executed by Another Workflow').item.json.email }}",
+            "requested_service": "={{ $('Normalize Lead Details').item.json.requested_service }}",
+            "appointment_date": "={{ $('Normalize Lead Details').item.json.appointment_date }}",
+            "appointment_time": "={{ $('Normalize Lead Details').item.json.appointment_time }}",
+            "session_id": "={{ $('When Executed by Another Workflow').item.json.session_id }}",
+            "customer_message": "={{ $('When Executed by Another Workflow').item.json.user_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        208
+      ],
+      "id": "eb11e074-92c0-416b-8879-559a42fa900c",
+      "name": "Call 'Booking AGent'",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Details": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Lead": {
+      "main": [
+        [
+          {
+            "node": "Opt Out?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Complete?": {
+      "main": [
+        [
+          {
+            "node": "Confirmation?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Check Existing Lead": {
+      "main": [
+        [
+          {
+            "node": "Existing Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Lead?": {
+      "main": [
+        [
+          {
+            "node": "update lead table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update lead table": {
+      "main": [
+        [
+          {
+            "node": "Generate lead summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Generate lead summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead": {
+      "main": [
+        [
+          {
+            "node": "Check Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Qualification": {
+      "main": [
+        [
+          {
+            "node": "Mark Qualified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Qualified": {
+      "main": [
+        [
+          {
+            "node": "Route Qualified Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lead Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Incomplete": {
+      "main": [
+        [
+          {
+            "node": "failed result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Lead?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Information Request?": {
+      "main": [
+        [
+          {
+            "node": "Human Handoff?1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "company id": {
+      "main": [
+        [
+          {
+            "node": "Is Information Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmation?": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opt Out?": {
+      "main": [
+        [
+          {
+            "node": "Handle Opt Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "appointment req?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Opt Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is New Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Chat1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Handoff?1": {
+      "main": [
+        [
+          {
+            "node": "Handle Human Handoff1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff1": {
+      "main": [
+        [
+          {
+            "node": "Chat2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate lead summary": {
+      "main": [
+        [
+          {
+            "node": "Call Sales Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Qualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Route Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Lead": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sales Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sales Lead": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Create a person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a person": {
+      "main": [
+        [
+          {
+            "node": "Automatic Follow-up Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Automatic Follow-up Wait": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "appointment req?": {
+      "main": [
+        [
+          {
+            "node": "Call 'Booking AGent'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Qualify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company DNA": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "company id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        []
+      ]
+    },
+    "Call Sales Agent": {
+      "main": [
+        []
+      ]
+    },
+    "failed result": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        []
+      ]
+    },
+    "Call 'Booking AGent'": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "13408b19-bbaa-4fc7-a1ba-df15b4cb8e14",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "zYI5fwO3AM35UTpp",
+  "tags": []
+}
