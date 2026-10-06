@@ -1,0 +1,1465 @@
+{
+  "name": "Intake & DNA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intake-dna",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        -64
+      ],
+      "id": "dda59bd8-902d-4cdf-9d60-2b8fc17b3247",
+      "name": "Webhook",
+      "webhookId": "95944c28-ff7a-4753-a102-d0c45212b505"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;\n\nreturn [{\n  json: {\n    company_id: body.company_id,\n    source_type: body.source_type,\n    source_content: body.source_content\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        -64
+      ],
+      "id": "08fede89-fb57-4d6a-80fe-183ea9255bf2",
+      "name": "Prepare Intake Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Intake & DNA Steward for COMPANY.\n\nYour job is to extract factual Company DNA information from the provided source.\n\nRules:\n- Extract ONLY information explicitly stated in the source.\n- Never invent, assume, or calculate information.\n- Pay special attention to prices, services, policies, workflows, and permissions.\n- If a price is explicitly mentioned, copy the exact price into \"pricing\".\n- CRITICAL: Look carefully for any mention of services (such as security auditing, penetration testing, consulting, managed services, etc.) and populate the \"services\" field. Do not leave it empty if services are stated or implied in the source content.\n- If a field is not mentioned anywhere in the source, return an empty string \"\".\n- Do not omit explicitly stated information.\n- Return ONLY valid JSON.\n- Do not include markdown or explanations.\n\nCompany ID:\n{{ $('Prepare Intake Request').first().json.company_id }}\n\nSource Type:\n{{ $('Prepare Intake Request').first().json.source_type }}\n\nSource Content:\n{{ $('Prepare Intake Request').first().json.source_content }}\n\nIMPORTANT:\nReturn ONLY one valid JSON object matching the exact structure below.\nDo not use markdown.\nDo not use ```json or ``` blocks.\nDo not add any explanations before or after the JSON.\nUse double quotes for every key and every string value.\nUse empty strings \"\" for missing values.\nDo not use trailing commas.\n\nReturn exactly this structure:\n\n{\n  \"company_id\": \"\",\n  \"company_name\": \"\",\n  \"industry\": \"\",\n  \"location\": \"\",\n  \"contact_info\": \"\",\n  \"business_hours\": \"\",\n  \"products\": \"\",\n  \"services\": \"\",\n  \"pricing\": \"\",\n  \"customer_segments\": \"\",\n  \"target_market\": \"\",\n  \"sales_channels\": \"\",\n  \"offers\": \"\",\n  \"policies\": \"\",\n  \"workflows\": \"\",\n  \"permissions\": \"\",\n  \"source_version\": \"v1\",\n  \"source_expiry\": \"\"\n}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1792,
+        -80
+      ],
+      "id": "ba4cfdde-324d-46f3-ba8f-7685ba75b0f3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        208
+      ],
+      "id": "18f529c4-bdd4-490a-9d96-3b0212384222",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw =\n  $json.text ??\n  $json.output ??\n  $json.response ??\n  $json.content ??\n  '';\n\nif (!raw || typeof raw !== 'string') {\n  throw new Error('LLM returned no text output');\n}\n\nlet cleaned = raw.trim();\n\ncleaned = cleaned\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nconst start = cleaned.indexOf('{');\nconst end = cleaned.lastIndexOf('}');\n\nif (start === -1 || end === -1 || end <= start) {\n  throw new Error('LLM did not return a JSON object');\n}\n\ncleaned = cleaned.slice(start, end + 1);\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (error) {\n  throw new Error(\n    `LLM returned invalid JSON: ${error.message}\\n\\nRaw output:\\n${raw}`\n  );\n}\n\nreturn [{\n  json: {\n    company_id: parsed.company_id || '',\n    company_name: parsed.company_name || '',\n    industry: parsed.industry || '',\n    location: parsed.location || '',\n    contact_info: parsed.contact_info || '',\n    business_hours: parsed.business_hours || '',\n    products: parsed.products || '',\n    services: parsed.services || '',\n    pricing: parsed.pricing || '',\n    customer_segments: parsed.customer_segments || '',\n    target_market: parsed.target_market || '',\n    sales_channels: parsed.sales_channels || '',\n    offers: parsed.offers || '',\n    policies: parsed.policies || '',\n    workflows: parsed.workflows || '',\n    permissions: parsed.permissions || '',\n    source_version: 'v1',\n    source_expiry: parsed.source_expiry || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        -16
+      ],
+      "id": "490f5347-34ea-4330-a703-44842f51cd40",
+      "name": "Parse Extracted DNA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $('Parse Extracted DNA').first().json;\nconst existing = $('Get Existing Company DNA').first().json;\n\nconst changes = [];\n\nconst fieldsToCompare = [\n  'products',\n  'services',\n  'pricing',\n  'customer_segments',\n  'target_market',\n  'sales_channels',\n  'offers',\n  'policies',\n  'workflows',\n  'permissions'\n];\n\nfor (const field of fieldsToCompare) {\n  const oldValue = String(existing[field] ?? '').trim();\n  const newValue = String(extracted[field] ?? '').trim();\n\n  if (newValue && oldValue !== newValue) {\n    changes.push({\n      field: field,\n      old_value: oldValue,\n      proposed_value: newValue\n    });\n  }\n}\n\nreturn [{\n  json: {\n    company_id: existing.company_id,\n    changes: changes,\n    changes_count: changes.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        112
+      ],
+      "id": "b16f603e-5ff3-48e4-a6c9-c912ff8ded47",
+      "name": "Compare DNA"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('Prepare Intake Request').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        -16
+      ],
+      "id": "fb7c9add-394f-4a10-b29d-3abebd8e7871",
+      "name": "Get Existing Company DNA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "79bd8425-19ae-4545-abe5-af7bac812e14",
+              "leftValue": "={{ $('Compare DNA').first().json.changes.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3488,
+        -112
+      ],
+      "id": "7479476b-2468-4dca-96d1-90d9a1b70ab2",
+      "name": "Changes Detected?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const existing = $('Get Existing Company DNA').first().json;\nconst changes = $('Compare DNA').first().json.changes || [];\n\nconst currentVersion = String(existing.dna_version || 'v0')\n  .trim()\n  .replace(/^v/i, '');\n\nconst currentNumber = parseInt(currentVersion, 10) || 0;\n\nconst updated = {\n  company_id: existing.company_id,\n  company_name: existing.company_name,\n  industry: existing.industry,\n  location: existing.location,\n  contact_info: existing.contact_info,\n  business_hours: existing.business_hours,\n\n  products: existing.products || '',\n  services: existing.services || '',\n  pricing: existing.pricing || '',\n  customer_segments: existing.customer_segments || '',\n  target_market: existing.target_market || '',\n  sales_channels: existing.sales_channels || '',\n  offers: existing.offers || '',\n  policies: existing.policies || '',\n  workflows: existing.workflows || '',\n  permissions: existing.permissions || '',\n\n  dna_version: `v${currentNumber + 1}`,\n\n  source_version: existing.source_version || 'v1',\n  source_expiry: existing.source_expiry || '',\n\n  lifecycle_state: 'pending_approval',\n  approval_status: 'pending',\n  approved_by: '',\n  approved_at: ''\n};\n\nfor (const change of changes) {\n  if (\n    change.proposed_value !== null &&\n    change.proposed_value !== undefined &&\n    String(change.proposed_value).trim() !== ''\n  ) {\n    updated[change.field] = change.proposed_value;\n  }\n}\n\nreturn [{ json: updated }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3728,
+        -128
+      ],
+      "id": "52e99813-9a66-46e0-b837-8188a1be6592",
+      "name": "Prepare Proposed Update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Get Existing Company DNA').first().json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $('Prepare Proposed Update').first().json.company_id }}",
+            "company_name": "={{ $('Prepare Proposed Update').first().json.company_name }}",
+            "industry": "={{ $('Prepare Proposed Update').first().json.industry }}",
+            "location": "={{ $('Prepare Proposed Update').first().json.location }}",
+            "contact_info": "={{ $('Prepare Proposed Update').first().json.contact_info }}",
+            "business_hours": "={{ $('Prepare Proposed Update').first().json.business_hours }}",
+            "services": "={{ $('Prepare Proposed Update').first().json.services }}",
+            "pricing": "={{ $('Prepare Proposed Update').first().json.pricing }}",
+            "policies": "={{ $('Prepare Proposed Update').first().json.policies }}",
+            "workflows": "={{ $('Prepare Proposed Update').first().json.workflows }}",
+            "permissions": "={{ $('Prepare Proposed Update').first().json.permissions }}",
+            "dna_version": "={{ $('Prepare Proposed Update').first().json.dna_version }}",
+            "source_version": "={{ $('Prepare Proposed Update').first().json.source_version }}",
+            "source_expiry": "={{ $('Prepare Proposed Update').first().json.source_expiry }}",
+            "approved_by": "={{ $('Human Approval').first().json.approved_by || '' }}",
+            "approved_at": "= {{ $now }}",
+            "lifecycle_state": "={{ 'approved' }}",
+            "approval_status": "={{ 'approved' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4848,
+        -240
+      ],
+      "id": "d54c14db-5899-4bf0-acc5-5e4f3a259190",
+      "name": "Update Company DNA"
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "DNA Change Approval",
+        "formDescription": "Review the proposed Company DNA changes and approve or reject them.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Reject"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4384,
+        -128
+      ],
+      "id": "256b0a19-1e48-42be-89ac-ff63e716029f",
+      "name": "Human Approval",
+      "webhookId": "dc078e13-1a82-4ffb-86d6-3453129712d8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "248f7baa-778c-4b23-ae94-bb362a98190d",
+              "leftValue": "={{ $json.Decision }}",
+              "rightValue": "Approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4624,
+        -128
+      ],
+      "id": "4d6720d6-e49f-4cd7-a03c-9cc373438366",
+      "name": "Approval Decision"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "adb3b462-65a0-4210-be72-f10953e8b122",
+              "leftValue": "={{ $json.body.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a3f4df62-2c53-4f75-9430-c6845e005bc7",
+              "leftValue": "={{ $json.body.source_content }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9f9c14c4-3d4a-48b6-a788-8905ca60e83d",
+              "leftValue": "={{ $json.body.source_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "53a9182a-4104-4804-82dd-d61c20ecdae1",
+      "name": "Validate Intake Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $json.body.source_content;\n\nif (typeof content !== 'string') {\n  throw new Error('source_content must be text');\n}\n\nif (content.trim().length < 5) {\n  throw new Error('source_content is too short');\n}\n\nif (content.length > 10000) {\n  throw new Error('source_content exceeds 10,000 characters');\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -192
+      ],
+      "id": "e978df87-75ac-47eb-8c14-13bd3f76aca4",
+      "name": "Validate Source Content"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1905beba-f005-41f1-815b-1af1473f6e90",
+              "leftValue": "={{ $json.body.source_type }}",
+              "rightValue": "Raw Text / Architecture Spec",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "85adbd71-bf3d-41ee-b3ca-a3eea480a670",
+              "leftValue": "={{ $json.body.source_type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -48
+      ],
+      "id": "9aff808f-e58d-4bef-9186-76f678aa6fd7",
+      "name": "Validate Source Type"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || {};\n\nconst content =\n  typeof body.source_content === 'string'\n    ? body.source_content\n    : '';\n\nconst promptInjectionPatterns = [\n  /ignore\\s+(all\\s+)?previous\\s+instructions/i,\n  /ignore\\s+(all\\s+)?prior\\s+instructions/i,\n  /ignore\\s+the\\s+instructions/i,\n  /system\\s+prompt/i,\n  /developer\\s+message/i,\n  /reveal\\s+(your\\s+)?(system\\s+)?prompt/i,\n  /reveal\\s+your\\s+instructions/i,\n  /jailbreak/i,\n  /do\\s+not\\s+follow\\s+(the\\s+)?previous/i\n];\n\nconst secretPatterns = [\n  /-----BEGIN\\s+(RSA\\s+|OPENSSH\\s+|EC\\s+|DSA\\s+)?PRIVATE\\s+KEY-----/i,\n  /\\bAKIA[0-9A-Z]{16}\\b/i,\n  /\\bsk-[A-Za-z0-9]{20,}\\b/i,\n  /\\b(password|passwd|pwd)\\s*[:=]\\s*\\S+/i,\n  /\\b(api[_-]?key|access[_-]?token|secret[_-]?key)\\s*[:=]\\s*\\S+/i,\n  /\\bAuthorization\\s*:\\s*Bearer\\s+\\S+/i,\n  /\\b(postgresql|postgres|mysql|mongodb|redis):\\/\\/\\S+/i\n];\n\nconst promptInjectionDetected =\n  promptInjectionPatterns.some(pattern => pattern.test(content));\n\nconst secretDetected =\n  secretPatterns.some(pattern => pattern.test(content));\n\nconst blocked =\n  promptInjectionDetected || secretDetected;\n\nreturn [{\n  json: {\n    ...$json,\n    security: {\n      status: blocked ? 'blocked' : 'safe',\n      prompt_injection_detected: promptInjectionDetected,\n      secret_detected: secretDetected,\n      blocked_reason:\n        promptInjectionDetected\n          ? 'prompt_injection'\n          : secretDetected\n            ? 'secret_detected'\n            : ''\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -48
+      ],
+      "id": "aeb7a707-8cfa-4d4a-a360-fc703bac4b57",
+      "name": "Security Guardrails"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a2356433-e513-4dab-872f-39cd261861fe",
+              "leftValue": "={{ $json.security.status }}",
+              "rightValue": "safe",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        -48
+      ],
+      "id": "222c0ab4-7bdc-43cc-8556-1db15222807a",
+      "name": "Security Check"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nreturn [{\n  json: {\n    company_id: item.company_id,\n    evidence: item\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        -192
+      ],
+      "id": "0f159263-61aa-410f-b88b-ba5f2cc3e3cb",
+      "name": "Prepare Evidence"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2784,
+        -96
+      ],
+      "id": "eeeff353-0fa9-412b-86c7-091342e80445",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const evidence = $('Prepare Evidence').first().json.evidence;\n\nconst fields = [\n  'products',\n  'services',\n  'pricing',\n  'customer_segments',\n  'target_market',\n  'sales_channels',\n  'offers',\n  'policies',\n  'workflows',\n  'permissions'\n];\n\nreturn fields\n  .filter(field => evidence[field] && String(evidence[field]).trim() !== '')\n  .map(field => ({\n    json: {\n      evidence_id: `${Date.now()}-${field}`,\n      company_id: $('Prepare Evidence').first().json.company_id,\n      field: field,\n      value: String(evidence[field]).trim(),\n      source_type: $('Webhook').first().json.body.source_type,\n      source_content: $('Webhook').first().json.body.source_content,\n      source_reference: $('Webhook').first().json.body.source_reference || '',\n      source_date: new Date().toISOString(),\n      reliability: 0.8,\n      created_at: new Date().toISOString()\n    }\n  }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        -288
+      ],
+      "id": "b710a692-6a93-45eb-ae92-e7df291bc049",
+      "name": "Prepare Evidence Rows"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "5micKACfeLKbeSK8",
+          "mode": "list",
+          "cachedResultName": "DNA Evidence",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "evidence_id": "={{ $json.evidence_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "field": "={{ $json.field }}",
+            "value": "={{ $json.value }}",
+            "source_type": "={{ $json.source_type }}",
+            "source_content": "={{ $json.source_content }}",
+            "source_reference": "={{ $json.source_reference }}",
+            "source_date": "={{ $json.source_date }}",
+            "reliability": "={{ $json.reliability }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3184,
+        -288
+      ],
+      "id": "93977287-aa15-4aeb-9907-9e821b0f2ec5",
+      "name": "Insert Evidence Row"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "56c9f2d3-7a03-49b5-94ae-da54d4081ca7",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2944,
+        -288
+      ],
+      "id": "c7cd6107-ed77-4c85-bf38-6f208c82767a",
+      "name": "Evidence Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "5micKACfeLKbeSK8",
+          "mode": "list",
+          "cachedResultName": "DNA Evidence",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            },
+            {
+              "keyName": "field",
+              "keyValue": "={{ $json.field }}"
+            },
+            {
+              "keyName": "value",
+              "keyValue": "={{ $json.value }}"
+            },
+            {
+              "keyName": "source_reference",
+              "keyValue": "={{ $json.source_reference }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2736,
+        -288
+      ],
+      "id": "8131ace5-edfa-4c83-8605-3b223713fe3d",
+      "name": "Check Existing Evidence"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $('Parse Extracted DNA').first().json;\nconst existing = $('Get Existing Company DNA').first().json;\n\nconst fields = [\n  'services',\n  'pricing',\n  'policies',\n  'workflows',\n  'permissions'\n];\n\nconst conflicts = [];\n\nfor (const field of fields) {\n  const oldValue = String(existing[field] ?? '').trim();\n  const newValue = String(extracted[field] ?? '').trim();\n\n  if (!oldValue || !newValue) continue;\n\n  const normalize = value =>\n    value\n      .toLowerCase()\n      .replace(/[.,]/g, '')\n      .replace(/\\s+/g, ' ')\n      .trim();\n\n  const oldNormalized = normalize(oldValue);\n  const newNormalized = normalize(newValue);\n\n  if (oldNormalized === newNormalized) continue;\n\n  let isConflict = false;\n\n  if (field === 'pricing') {\n    const oldNumbers = oldValue.match(/\\d+(?:\\.\\d+)?/g) || [];\n    const newNumbers = newValue.match(/\\d+(?:\\.\\d+)?/g) || [];\n\n    if (\n      oldNumbers.length > 0 &&\n      newNumbers.length > 0 &&\n      oldNumbers[0] !== newNumbers[0]\n    ) {\n      isConflict = true;\n    }\n  }\n\n  if (field === 'policies' || field === 'permissions') {\n    const oldNegative = /\\b(no|not|without|never|prohibited|disabled)\\b/i.test(oldValue);\n    const newNegative = /\\b(no|not|without|never|prohibited|disabled)\\b/i.test(newValue);\n\n    if (oldNegative !== newNegative) {\n      isConflict = true;\n    }\n  }\n\n  if (isConflict) {\n    conflicts.push({\n      field,\n      existing_value: oldValue,\n      new_value: newValue,\n      reason: 'New source contains information that contradicts existing Company DNA'\n    });\n  }\n}\n\nreturn [{\n  json: {\n    company_id: existing.company_id,\n    conflicts\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        208
+      ],
+      "id": "1efa2534-273c-4620-bba8-ae1ab320d5ef",
+      "name": "Conflict Detection"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Missing Info Detection').first().json;\n\nconst missingFields = data.missing_fields || [];\n\nconst questions = {\n  products: \"What products does your company offer?\",\n  services: \"What services does your company provide?\",\n  pricing: \"What is your pricing or pricing model?\",\n  customer_segments: \"Who are your main customer segments?\",\n  target_market: \"What is your target market?\",\n  sales_channels: \"Which sales channels do you use?\",\n  offers: \"What offers, discounts, or packages do you provide?\",\n  policies: \"What important company policies should be followed?\",\n  workflows: \"What are your standard business workflows?\",\n  permissions: \"What actions require admin approval or special permission?\"\n};\n\nconst targetedQuestions = missingFields.map(field => ({\n  field,\n  question: questions[field]\n})).filter(item => item.question);\n\nreturn [{\n  json: {\n    company_id: data.company_id,\n    targeted_questions: targetedQuestions\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3728,
+        32
+      ],
+      "id": "a697e92a-9236-40f2-b475-594f6270911c",
+      "name": "Generate Targeted Questions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const compare = $('Compare DNA').first().json;\nconst changes = compare.changes || [];\n\nconst impacts = [];\n\nconst impactMap = {\n  services: [\n    'AI agent service knowledge',\n    'customer-facing responses',\n    'sales workflows'\n  ],\n  pricing: [\n    'pricing responses',\n    'sales workflows',\n    'customer communications'\n  ],\n  policies: [\n    'policy enforcement',\n    'AI agent instructions',\n    'approval workflows'\n  ],\n  workflows: [\n    'business process execution',\n    'AI agent workflows',\n    'automation rules'\n  ],\n  permissions: [\n    'agent permissions',\n    'approval requirements',\n    'access control rules'\n  ]\n};\n\nfor (const change of changes) {\n  const affectedAreas = impactMap[change.field] || [\n    'Company DNA dependent workflows'\n  ];\n\n  impacts.push({\n    field: change.field,\n    old_value: change.old_value,\n    new_value: change.proposed_value,\n    affected_areas: affectedAreas,\n    impact_level: change.field === 'permissions' || change.field === 'policies'\n      ? 'high'\n      : 'medium'\n  });\n}\n\nreturn [{\n  json: {\n    company_id: compare.company_id,\n    impacts: impacts,\n    impact_count: impacts.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        368
+      ],
+      "id": "7de1a1f8-7987-4ba3-92ca-a04ebd99d015",
+      "name": "Impact Analysis"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "mmfhuZGrmPCzzja2",
+          "mode": "list",
+          "cachedResultName": "DNA Findings",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "finding_id": "={{ $json.finding_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "dna_version": "={{ $json.dna_version }}",
+            "finding_type": "={{ $json.finding_type }}",
+            "field": "={{ $json.field }}",
+            "details": "={{ $json.details }}",
+            "old_value": "={{ $json.old_value }}",
+            "new_value": "={{ $json.new_value }}",
+            "severity": "={{ $json.severity }}",
+            "status": "={{ $json.status }}",
+            "source_evidence_id": "={{ $json.source_evidence_id }}",
+            "created_at": "={{ $json.created_at }}",
+            "resolved_at": "={{ $json.resolved_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4000,
+        224
+      ],
+      "id": "2527d564-51d7-4151-9d8a-6839dd75ae2b",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "ynh1jQAsfh0jMUhD",
+          "mode": "list",
+          "cachedResultName": "DNA Questions",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question_id": "={{ $json.question_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "dna_version": "={{ $json.dna_version }}",
+            "missing_field": "={{ $json.missing_field }}",
+            "question": "={{ $json.question }}",
+            "status": "={{ $json.status }}",
+            "answer": "={{ $json.answer }}",
+            "answered_at": "={{ $json.answered_at }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4624,
+        32
+      ],
+      "id": "8fc09209-6ee3-40e3-b4cd-3317c4bc16f1",
+      "name": "questions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\n\nif (input.length === 0) {\n  return [];\n}\n\nconst results = [];\n\nfor (const item of input) {\n  const data = item.json;\n\n  const rawQuestions = data.targeted_questions;\n\n  if (!rawQuestions) {\n    continue;\n  }\n\n  const questions = Array.isArray(rawQuestions)\n    ? rawQuestions\n    : [rawQuestions];\n\n  for (let i = 0; i < questions.length; i++) {\n    const q = questions[i];\n\n    if (!q || !q.field || !q.question) {\n      continue;\n    }\n\n    results.push({\n      json: {\n        question_id: `Q-${data.company_id}-${q.field}-${$execution.id}-${i + 1}`,\n        company_id: data.company_id,\n        dna_version: 'v6',\n        missing_field: q.field,\n        question: q.question,\n        status: 'pending',\n        answer: '',\n        answered_at: '',\n        created_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4368,
+        32
+      ],
+      "id": "7cb354a2-5fa4-4cd2-b198-0877f0a5a365",
+      "name": "Prepare Question",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const generated = $('Test Scenario').first().json;\n\nconst scenarios = Array.isArray(generated.test_scenarios)\n  ? generated.test_scenarios\n  : [];\n\nif (scenarios.length === 0) {\n  return [];\n}\n\nconst dnaVersion = $('Get Existing Company DNA').first().json.dna_version;\n\nreturn scenarios.map((scenario, index) => ({\n  json: {\n    scenario_id: `SC-${generated.company_id}-${$execution.id}-${index + 1}`,\n    company_id: generated.company_id,\n    dna_version: String(dnaVersion || '').trim(),\n    scenario: (scenario.test || '').trim(),\n    expected_behavior: (scenario.expected_result || '').trim(),\n    actual_result: '',\n    status: 'pending',\n    created_at: new Date().toISOString(),\n    tested_at: ''\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3952,
+        384
+      ],
+      "id": "f105bfad-97ec-46c7-a44e-f516e9838a83",
+      "name": "Prepare Test Scenario"
+    },
+    {
+      "parameters": {
+        "jsCode": "const impactData = $('Impact Analysis').first().json;\n\nconst impacts = Array.isArray(impactData.impacts)\n  ? impactData.impacts\n  : [];\n\nconst testScenarios = [];\n\nfor (const impact of impacts) {\n  const field = impact.field;\n  const newValue = impact.new_value ?? '';\n\n  if (!field) {\n    continue;\n  }\n\n  testScenarios.push({\n    field: field,\n    test: `Verify the updated ${field} information is correctly applied.`,\n    expected_result: `Agent uses \"${newValue}\".`\n  });\n}\n\nreturn [{\n  json: {\n    company_id: impactData.company_id,\n    test_scenarios: testScenarios,\n    scenario_count: testScenarios.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        384
+      ],
+      "id": "e19f5e0b-d82e-4985-aa5e-f82031d0ced2",
+      "name": "Test Scenario"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "PkXcbFUVaQ9DQ46V",
+          "mode": "list",
+          "cachedResultName": "DNA Test Scenarios",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "scenario_id": "={{ $json.scenario_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "dna_version": "= {{ $json.dna_version }}",
+            "scenario": "={{ $json.scenario }}",
+            "expected_behavior": "={{ $json.expected_behavior }}",
+            "actual_result": "={{ $json.actual_result }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}",
+            "tested_at": "= {{ $json.tested_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4176,
+        384
+      ],
+      "id": "b764af7d-f973-458f-a1cc-76676860745b",
+      "name": "test scenerio"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Missing Info Detection').first().json;\n\nconst fields = Array.isArray(data.missing_fields)\n  ? data.missing_fields\n  : [];\n\nif (fields.length === 0) {\n  return [];\n}\n\nreturn fields.map((field, index) => ({\n  json: {\n    finding_id: `F-${data.company_id}-missing-${$execution.id}-${index + 1}`,\n    company_id: data.company_id,\n    dna_version: 'v3',\n    finding_type: 'missing_info',\n    field: field,\n    details: `Required DNA field \"${field}\" is missing.`,\n    old_value: '',\n    new_value: '',\n    severity: 'medium',\n    status: 'open',\n    source_evidence_id: '',\n    created_at: new Date().toISOString(),\n    resolved_at: ''\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        224
+      ],
+      "id": "87a254ae-e9a2-4791-8e95-50e1e898013e",
+      "name": "findings"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $('Parse Extracted DNA').first().json;\n\nconst requiredFields = [\n  'products',\n  'services',\n  'pricing',\n  'customer_segments',\n  'target_market',\n  'sales_channels',\n  'offers',\n  'policies',\n  'workflows',\n  'permissions'\n];\n\nconst missingFields = requiredFields.filter(field => {\n  const value = extracted[field];\n  return value === null || value === undefined || String(value).trim() === '';\n});\n\nreturn [{\n  json: {\n    company_id: extracted.company_id,\n    missing_fields: missingFields,\n    missing_count: missingFields.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3488,
+        32
+      ],
+      "id": "c6a0561c-cdfa-4113-8cf4-0e55c6a90d5b",
+      "name": "Missing Info Detection"
+    },
+    {
+      "parameters": {
+        "jsCode": "const existing = $('Get Existing Company DNA').first().json;\n\nconst currentVersion = String(existing.dna_version || 'v0')\n  .trim()\n  .replace(/^v/i, '');\n\nconst nextVersion = `v${(parseInt(currentVersion, 10) || 0) + 1}`;\n\nreturn [{\n  json: {\n    company_id: existing.company_id,\n    dna_version: nextVersion\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        -96
+      ],
+      "id": "0344c9be-e226-48bb-a1a2-c82921f73cf1",
+      "name": "Get Existing Company DNA1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || {};\n\nconst expiryRaw = body.source_expiry;\n\nlet expired = false;\nlet expiryDate = null;\n\nif (expiryRaw && String(expiryRaw).trim() !== '') {\n  expiryDate = new Date(String(expiryRaw).trim());\n\n  if (!isNaN(expiryDate.getTime())) {\n    expired = expiryDate.getTime() < Date.now();\n  }\n}\n\nreturn [{\n  json: {\n    ...$json,\n    source_expiry: expiryRaw || '',\n    source_expired: expired,\n    source_expiry_valid:\n      !expiryRaw || !isNaN(expiryDate?.getTime())\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -64
+      ],
+      "id": "2c5403ac-5f66-4cae-ada4-f8c5c8a8c6fa",
+      "name": "Check Source Expiry"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ba8482e5-36a8-475a-a387-5ba8ba532a12",
+              "leftValue": "={{ $json.source_expired }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        -64
+      ],
+      "id": "985ac516-ac30-4001-bdd1-e4faa557ed12",
+      "name": "source expired"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    lifecycle_state: 'rejected',\n    approval_status: 'rejected'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4848,
+        -48
+      ],
+      "id": "9ed0d10a-4e13-41e7-a8b6-761305c2c26b",
+      "name": "reject update"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "[https://ntfy.sh/alaiha_n8n_approval_alerts](https://ntfy.sh/alaiha_n8n_approval_alerts)",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"topic\": \"alaiha_n8n_approval_alerts\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4176,
+        -128
+      ],
+      "id": "f89d721d-2aff-4460-82bd-47a099fdb6f2",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a030d2dd-00c8-4871-86e0-16e3e517d263",
+              "name": "approval_url",
+              "value": "={{ $execution.resumeUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3952,
+        -128
+      ],
+      "id": "24003d2e-9421-41c5-bc35-865f83112134",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4800,
+        320
+      ],
+      "id": "2ab92f26-7cde-4c00-9eb1-0209b500b31d",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet missingFieldsList = [];\nlet questionsList = [];\nlet testScenariosList = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  if (data.field || data.details || data.finding_type === 'missing_info') {\n    missingFieldsList.push({\n      field: data.field || data.missing_field || 'unknown_field',\n      details: data.details || `Required DNA field is missing.`\n    });\n  }\n  \n  if (data.question) {\n    questionsList.push(data.question);\n  } else if (data.target_question) {\n    questionsList.push(data.target_question);\n  }\n  \n  if (data.scenario || data.test_scenario || data.description) {\n    testScenariosList.push(data.scenario || data.test_scenario || data.description);\n  }\n}\n\nreturn [{\n  json: {\n    status: \"success\",\n    assistant_message: \"DNA baseline analysis completed.\",\n    missing_fields: missingFieldsList,\n    questions: questionsList,\n    test_scenarios: testScenariosList,\n    requires_user_input: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5024,
+        320
+      ],
+      "id": "55763f99-aa1a-4bc5-8321-a53dbb1a80db",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        5328,
+        176
+      ],
+      "id": "93dab6d1-7c79-4aa8-b2ea-9daf3bbff67e",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Intake Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Intake Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse Extracted DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Extracted DNA": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Company DNA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compare DNA": {
+      "main": [
+        [
+          {
+            "node": "Changes Detected?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Impact Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Info Detection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Conflict Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Changes Detected?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Proposed Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Proposed Update": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Approval": {
+      "main": [
+        [
+          {
+            "node": "Approval Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Decision": {
+      "main": [
+        [
+          {
+            "node": "Update Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "reject update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Company DNA": {
+      "main": []
+    },
+    "Validate Intake Input": {
+      "main": [
+        [
+          {
+            "node": "Validate Source Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Source Content": {
+      "main": [
+        [
+          {
+            "node": "Validate Source Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Source Type": {
+      "main": [
+        [
+          {
+            "node": "Check Source Expiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Guardrails": {
+      "main": [
+        [
+          {
+            "node": "Security Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Check": {
+      "main": [
+        [
+          {
+            "node": "Prepare Intake Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Evidence": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Evidence Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Compare DNA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Existing Company DNA1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Evidence Rows": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evidence Exists?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Insert Evidence Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Evidence": {
+      "main": [
+        [
+          {
+            "node": "Evidence Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conflict Detection": {
+      "main": [
+        [
+          {
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impact Analysis": {
+      "main": [
+        [
+          {
+            "node": "Test Scenario",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Targeted Questions": {
+      "main": [
+        [
+          {
+            "node": "Prepare Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Question": {
+      "main": [
+        [
+          {
+            "node": "questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Test Scenario": {
+      "main": [
+        [
+          {
+            "node": "test scenerio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Scenario": {
+      "main": [
+        [
+          {
+            "node": "Prepare Test Scenario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "findings": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missing Info Detection": {
+      "main": [
+        [
+          {
+            "node": "Generate Targeted Questions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Source Expiry": {
+      "main": [
+        [
+          {
+            "node": "source expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "source expired": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Security Guardrails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Human Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "questions": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "test scenerio": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e0f5a204-334c-4172-a090-3402f1aa81cd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "ijx1w3FE4Kn5SvMs",
+  "tags": []
+}
