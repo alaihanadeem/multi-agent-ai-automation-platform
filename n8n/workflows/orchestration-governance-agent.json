@@ -1,0 +1,1898 @@
+{
+  "name": "Orchestration & Governance Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1104,
+        -240
+      ],
+      "id": "a5400d98-5801-40c4-82c8-ed336144b80f",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first()?.json || {};\nconst bodyData = input.body || {};\n\nconst incomingAgent = bodyData.target_agent || input.target_agent;\nlet agentId = '';\nlet agentName = '';\nlet incomingIntent = '';\n\nif (typeof incomingAgent === 'object' && incomingAgent !== null) {\n  agentId = String(incomingAgent.id || '').toLowerCase().trim();\n  agentName = incomingAgent.name || '';\n  incomingIntent = String(incomingAgent.intent || '').toLowerCase().trim();\n} else if (typeof incomingAgent === 'string') {\n  agentId = incomingAgent.toLowerCase().trim();\n  agentName = incomingAgent;\n}\n\nlet targetAgent = agentName || input.selected_agent || bodyData.selected_agent || input.agent_name || 'Governance Agent';\nlet determinedIntent = incomingIntent || input.intent || bodyData.intent || agentId || 'governance_check';\nlet governanceRoute = input.governance_route || bodyData.governance_route || agentId || 'policy_check';\n\nconst companyId = input.company_id || bodyData.company_id || input.tenant_id || bodyData.tenant_id || 'COMP001';\nconst customerMsg = input.customer_message || bodyData.customer_message || input.user_query || bodyData.user_query || input.user_message || bodyData.user_message || input.message || bodyData.message || 'Web console governance validation request.';\n\nreturn [{\n  json: {\n    ...input,\n    ...bodyData,\n\n    company_id: companyId,\n    tenant_id: companyId,\n    session_id: input.session_id || bodyData.session_id || 'WEB-SESS-' + Math.random().toString(36).substring(7),\n    lead_id: input.lead_id || bodyData.lead_id || '',\n    opportunity_id: input.opportunity_id || bodyData.opportunity_id || '',\n\n    customer_name: input.customer_name || bodyData.customer_name || '',\n    email: input.email || bodyData.email || '',\n    phone: input.phone || bodyData.phone || '',\n\n    customer_message: customerMsg,\n    user_query: customerMsg,\n    \n    target_agent: incomingAgent || { id: agentId, name: agentName, intent: determinedIntent },\n    target_agent_id: agentId,\n    target_agent_name: agentName,\n    intent: determinedIntent,\n    requested_service: input.requested_service || bodyData.requested_service || agentName || '',\n    \n    appointment_date: input.appointment_date || bodyData.appointment_date || input.date || bodyData.date || input.preferred_date || bodyData.preferred_date || '',\n    appointment_time: input.appointment_time || bodyData.appointment_time || input.preferred_slot || bodyData.preferred_slot || input.time_slot || bodyData.time_slot || input.preferred_time || bodyData.preferred_time || '',\n    preferred_slot: input.preferred_slot || bodyData.preferred_slot || input.appointment_time || bodyData.appointment_time || '',\n\n    business_need: input.business_need || bodyData.business_need || '',\n    matched_solution: input.matched_solution || bodyData.matched_solution || '',\n    budget: input.budget || bodyData.budget || bodyData.estimated_budget || '',\n    scope: input.scope || bodyData.scope || '',\n    \n    next_step: input.next_step || bodyData.next_step || 'general_inquiry',\n    consent_to_contact: true,\n\n    selected_agent: targetAgent,\n    governance_route: governanceRoute,\n    is_valid_request: true,\n    is_valid_context: true,\n\n    governance_status: 'received',\n    routing_status: 'pending',\n    approval_required: false,\n    human_handoff: false,\n\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -240
+      ],
+      "id": "08e3d255-bddf-4444-a639-e4977caf47a3",
+      "name": "Accept Governance Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst companyValid = String(input.company_id || input.tenant_id || '').trim() !== '';\nconst sessionValid = String(input.session_id || '').trim() !== '';\nconst messageValid = String(input.customer_message || input.user_query || '').trim() !== '';\n\nconst intent = String(input.intent || '').trim() || 'inquiry';\nconst requestedService = String(input.requested_service || '').trim() || 'General Security Assessment';\nconst nextStep = String(input.next_step || '').trim() || 'general_inquiry';\n\nconst validIntent = intent !== '';\nconst validNextStep = nextStep !== '';\n\nconst contextValid =\n  companyValid &&\n  sessionValid &&\n  messageValid &&\n  validIntent &&\n  validNextStep;\n\nreturn [{\n  json: {\n    ...input,\n\n    company_valid: companyValid,\n    session_valid: sessionValid,\n    message_valid: messageValid,\n    intent_valid: validIntent,\n    next_step_valid: validNextStep,\n    context_valid: contextValid,\n\n    intent: intent,\n    requested_service: requestedService,\n    next_step: nextStep,\n    consent_to_contact: input.consent_to_contact !== false,\n\n    governance_status: contextValid\n      ? 'context_validated'\n      : 'context_invalid',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        -240
+      ],
+      "id": "b914f005-9052-4715-a0bc-9987c438af7f",
+      "name": "Validate Governance Context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "57ae662b-2199-4440-a21b-c7a4a2d13c03",
+              "leftValue": "={{ $json.context_valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -256
+      ],
+      "id": "90db8e64-1242-4d21-94ac-6e2494c9bc19",
+      "name": "Context Valid?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first()?.json || {};\n\nconst targetAgentObj = input.target_agent || {};\nconst userObj = input.user || {};\n\nconst targetId = String(\n  input.target_agent_id || \n  targetAgentObj.id || \n  targetAgentObj.target_agent_id || \n  ''\n).toLowerCase().trim();\n\nconst intent = String(\n  input.intent || \n  targetAgentObj.intent || \n  input.user_query || \n  input.customer_message || \n  ''\n).toLowerCase().trim();\n\nconst selectedAgent = String(\n  input.selected_agent || \n  targetAgentObj.name || \n  ''\n).toLowerCase().trim();\n\nconst rawRoute = String(input.governance_route || '').toLowerCase().trim();\n\nlet route = 'general_ai_agent';\nlet targetAgent = 'General AI Agent';\n\nif (targetId === 'quote' || intent.includes('quote') || selectedAgent.includes('quote') || intent.includes('pricing') || intent.includes('price')) {\n  route = 'quote_agent';\n  targetAgent = 'Quote Agent';\n} else if (targetId === 'appointment' || intent.includes('appointment') || intent.includes('booking') || intent.includes('schedule') || selectedAgent.includes('appointment')) {\n  route = 'appointment_agent';\n  targetAgent = 'Appointment Agent';\n} else if (targetId === 'sales' || intent.includes('sales') || selectedAgent.includes('sales')) {\n  route = 'sales_agent';\n  targetAgent = 'Sales Agent';\n} else if (targetId === 'followup' || intent.includes('followup') || selectedAgent.includes('followup') || intent.includes('follow_up')) {\n  route = 'followup_agent';\n  targetAgent = 'Follow-up Agent';\n} else if (targetId === 'marketing' || intent.includes('marketing') || selectedAgent.includes('marketing')) {\n  route = 'marketing_agent';\n  targetAgent = 'Marketing Agent';\n} else if (targetId === 'lead' || intent.includes('lead') || selectedAgent.includes('lead')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'support' || intent.includes('support') || intent.includes('help') || selectedAgent.includes('support')) {\n  route = 'support_agent';\n  targetAgent = 'Support Agent';\n} else if (targetId === 'review' || intent.includes('review') || intent.includes('feedback') || selectedAgent.includes('feedback')) {\n  route = 'feedback_agent';\n  targetAgent = 'Feedback';\n} else if (targetId === 'whatsapp' || intent.includes('whatsapp') || selectedAgent.includes('whatsapp') || intent.includes('critical') || intent.includes('alert')) {\n  route = 'whatsapp_agent';\n  targetAgent = 'WhatsApp Agent';\n} else if (targetId === 'analytics' || intent.includes('analytics') || selectedAgent.includes('analytics')) {\n  route = 'analytics_agent';\n  targetAgent = 'Analytics';\n} else if (targetId === 'intake' || targetId === 'dna' || intent.includes('dna') || intent.includes('intake') || intent.includes('steward')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'governance' || targetId === 'orchestration' || intent.includes('governance')) {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n} else {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n}\n\nreturn [{\n  json: {\n    ...input,\n    governance_route: route,\n    selected_agent: targetAgent,\n    human_handoff: false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -336
+      ],
+      "id": "0a96a2d3-dd08-4bb0-8c2a-d1bdf917f482",
+      "name": "Determine Governance Route"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst route = String(input.governance_route || '').trim().toLowerCase();\n\nlet policyAllowed = true;\nlet approvalRequired = false;\nlet humanHandoff = false;\nlet policyReason = 'Route approved under corporate governance policy.';\n\nconst allowedRoutes = [\n  'quote', 'quote_agent', 'pricing', 'quote_and_proposal',\n  'appointment', 'appointment_agent', 'booking',\n  'sales', 'sales_agent',\n  'follow_up', 'followup', 'followup_agent',\n  'marketing', 'marketing_agent',\n  'lead', 'lead_capture', 'lead_capture_agent', 'intake',\n  'support', 'support_agent', 'customer_support',\n  'review', 'feedback', 'feedback_agent',\n  'whatsapp', 'whatsapp_agent',\n  'analytics', 'analytics_agent',\n  'dna', 'dna_steward', 'dna_steward_agent',\n  'governance', 'governance_agent', 'orchestration',\n  'general_ai_agent', 'general_ai', 'opt_out'\n];\n\nif (allowedRoutes.includes(route)) {\n  policyAllowed = true;\n  approvalRequired = false;\n  humanHandoff = false;\n  policyReason = 'Route ' + route + ' is authorized under zero-trust governance.';\n} else if (route === 'human_handoff') {\n  policyAllowed = true;\n  humanHandoff = true;\n  policyReason = 'Request requires human assistance.';\n} else {\n  policyAllowed = true;\n  approvalRequired = false;\n  humanHandoff = false;\n  policyReason = 'Route allowed through fallback AI assistance.';\n}\n\nreturn [{\n  json: {\n    ...input,\n    policy_allowed: policyAllowed,\n    approval_required: approvalRequired,\n    human_handoff: humanHandoff,\n    policy_reason: policyReason,\n    governance_status: 'policy_checked',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        -352
+      ],
+      "id": "a4d97841-c069-4a63-bf49-c3019d3cdb8f",
+      "name": "Check Governance Policy"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5cb5bacf-2b46-4a16-9dac-2c8b248641dc",
+              "leftValue": "={{ $json.approval_required }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        -352
+      ],
+      "id": "f4793080-8e7d-480c-a2c9-626354435290",
+      "name": "Check Approval Required?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst route = String(input.governance_route || '').trim().toLowerCase();\n\nlet selectedAgent = 'General AI Agent';\nlet executionReason = '';\nlet humanHandoff = false;\n\nif (route === 'quote_agent' || route === 'quote') {\n  selectedAgent = 'Quote Agent';\n  executionReason = 'Routed to Quote Agent for proposal & pricing.';\n}\nelse if (route === 'appointment_agent' || route === 'appointment') {\n  selectedAgent = 'Appointment Agent';\n  executionReason = 'Routed to Appointment Agent for scheduling.';\n}\nelse if (route === 'sales_agent' || route === 'sales') {\n  selectedAgent = 'Sales Agent';\n  executionReason = 'Routed to Sales Agent for enterprise solutioning.';\n}\nelse if (route === 'followup_agent' || route === 'followup') {\n  selectedAgent = 'Follow-up Agent';\n  executionReason = 'Routed to Follow-up Agent for ticket tracking.';\n}\nelse if (route === 'marketing_agent' || route === 'marketing') {\n  selectedAgent = 'Marketing Agent';\n  executionReason = 'Routed to Marketing Agent for advisories.';\n}\nelse if (route === 'lead_capture_agent' || route === 'lead' || route === 'intake') {\n  selectedAgent = 'Lead Capture Agent';\n  executionReason = 'Routed to Lead Capture Agent for intake.';\n}\nelse if (route === 'support_agent' || route === 'support') {\n  selectedAgent = 'Support Agent';\n  executionReason = 'Routed to Support Agent for emergency triage.';\n}\nelse if (route === 'feedback_agent' || route === 'review' || route === 'feedback') {\n  selectedAgent = 'Feedback';\n  executionReason = 'Routed to Review & Feedback Agent for QA ingestion.';\n}\nelse if (route === 'whatsapp_agent' || route === 'whatsapp') {\n  selectedAgent = 'WhatsApp Agent';\n  executionReason = 'Routed to WhatsApp Agent for mobile incident dispatch.';\n}\nelse if (route === 'analytics_agent' || route === 'analytics') {\n  selectedAgent = 'Analytics';\n  executionReason = 'Routed to Analytics & Insights Agent for SLA metrics.';\n}\nelse {\n  selectedAgent = 'General AI Agent';\n  executionReason = 'Routed to General AI Agent for intelligent SecOps assistance.';\n}\n\nreturn [{\n  json: {\n    ...input,\n    selected_agent: selectedAgent,\n    execution_target: selectedAgent,\n    execution_reason: executionReason,\n    human_handoff: false,\n    execution_status: 'started',\n    governance_status: 'route_executed',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        -144
+      ],
+      "id": "e4520551-8c3c-401b-9e4d-2f2c47a79e5d",
+      "name": "Execute Governance Route"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst targetAgent = input.execution_target || input.selected_agent || 'Human Handoff';\n\nreturn [{\n  json: {\n    ...input,\n\n    execution_id: 'EXEC-' + String($execution.id),\n    execution_started_at: new Date().toISOString(),\n    execution_status: 'started',\n\n    agent_execution_status: 'started',\n    agent_execution_target: targetAgent,\n    selected_agent: targetAgent,\n    \n    governance_status: 'agent_execution_started',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -144
+      ],
+      "id": "cd3851fb-b338-4719-b97e-63afdb99e8f7",
+      "name": "Start Agent Execution"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    approval_id: 'GOV-APP-' + $execution.id,\n    approval_status: 'pending',\n    approval_requested_at: new Date().toISOString(),\n\n    execution_status: 'waiting_approval',\n    governance_status: 'approval_pending',\n\n    approval_reason:\n      input.policy_reason ||\n      'Governance policy requires approval before execution.',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -496
+      ],
+      "id": "45457ee4-f2f3-4c12-99f2-f0113d76b63a",
+      "name": "Create Governance Approval"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8ae48a4f-9e8f-401b-b5a5-627e5735ac85",
+              "leftValue": "={{ $json.approval_status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1488,
+        -512
+      ],
+      "id": "fcbd68e5-ecb2-4996-9abc-dd3da4af083d",
+      "name": "Approval Decision?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    approval_status: 'pending',\n    execution_status: 'waiting_approval',\n    governance_status: 'approval_pending',\n\n    assistant_message:\n      'This request requires approval before execution.',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        -496
+      ],
+      "id": "07955900-1fbf-4dd1-a15e-d50c2f782072",
+      "name": "Handle Approval Pending"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nlet route = String(input.governance_route || '').trim().toLowerCase();\n\nconst aliasMap = {\n  'lead_capture_agent': 'lead_capture_agent',\n  'lead': 'lead_capture_agent',\n  'intake': 'lead_capture_agent',\n  'review': 'feedback_agent',\n  'feedback': 'feedback_agent',\n  'follow_up': 'followup_agent',\n  'followup': 'followup_agent',\n  'quote': 'quote_agent',\n  'pricing': 'quote_agent',\n  'booking': 'appointment_agent',\n  'appointment': 'appointment_agent',\n  'sales': 'sales_agent',\n  'support': 'support_agent',\n  'marketing': 'marketing_agent',\n  'whatsapp': 'whatsapp_agent',\n  'analytics': 'analytics_agent',\n  'governance': 'governance_agent',\n  'governance_agent': 'governance_agent',\n  'dna': 'dna_steward_agent',\n  'dna_steward': 'dna_steward_agent',\n  'general_ai_agent': 'general_ai_agent',\n  'general': 'general_ai_agent',\n  'general_ai': 'general_ai_agent',\n  'technical_inquiry': 'general_ai_agent'\n};\n\nif (aliasMap[route]) {\n  route = aliasMap[route];\n}\n\nconst allowedRoutes = [\n  'sales_agent', \n  'quote_agent', \n  'appointment_agent', \n  'lead_capture_agent',\n  'support_agent', \n  'marketing_agent', \n  'followup_agent', \n  'whatsapp_agent',\n  'feedback_agent', \n  'analytics_agent', \n  'governance_agent', \n  'dna_steward_agent',\n  'general_ai_agent',\n  'human_handoff',\n  'opt_out'\n];\n\nconst isAllowed = allowedRoutes.includes(route);\nconst targetAgent = isAllowed ? (input.selected_agent || input.execution_target || 'General AI Agent') : 'Human Handoff';\n\nreturn [{\n  json: {\n    ...input,\n    governance_route: route,\n    permission_allowed: isAllowed,\n    permission_reason: isAllowed ? `Permission granted for ${route}.` : `No permission for ${route}.`,\n    execution_target: targetAgent,\n    selected_agent: targetAgent,\n    execution_status: isAllowed ? 'ready' : 'blocked'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        -144
+      ],
+      "id": "5c55bcfb-9fd8-45fd-a025-f5416d2a9eb0",
+      "name": "Check Agent Permission"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1d299eac-d1dc-4999-b37d-0a8d2d411ea8",
+              "leftValue": "={{ $json.permission_allowed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2032,
+        -144
+      ],
+      "id": "18b1bb16-bcc5-44b0-9d66-51527cd917d9",
+      "name": "Permission Allowed?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    permission_allowed: false,\n    execution_status: 'blocked',\n    governance_status: 'permission_denied',\n\n    human_handoff: true,\n\n    assistant_message:\n      'This request cannot be executed because the required agent permission is not available.',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        32
+      ],
+      "id": "272352f5-2fe1-4539-b109-f9f07e04f07b",
+      "name": "Handle Permission Denied"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst selectedAgent = \n  input.execution_target || \n  input.selected_agent || \n  'Human Handoff';\n\nreturn [{\n  json: {\n    ...input,\n\n    route_status: 'agent_selected',\n    selected_agent: selectedAgent,\n    execution_target: selectedAgent,\n    routing_reason: input.execution_reason || input.permission_reason || `Routed to ${selectedAgent}.`,\n\n    governance_status: 'agent_selected',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -256
+      ],
+      "id": "1e28d54a-4a01-4640-adac-6cfedf7de608",
+      "name": "Route to Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nlet selectedAgent = input.selected_agent || 'General AI Agent';\n\nreturn [{\n  json: {\n    ...input,\n    selected_agent: selectedAgent,\n    execution_target: selectedAgent,\n    human_handoff: false,\n    decision: 'executed',\n    decision_reason: `Dispatched to ${selectedAgent}.`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        -256
+      ],
+      "id": "5aedc259-79e3-4f74-870e-c684a5c9d288",
+      "name": "Prepare Agent Dispatch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    dispatch_status: 'dispatched',\n    dispatched_at: new Date().toISOString(),\n\n    agent_execution_status: 'dispatched',\n    governance_status: 'agent_dispatched',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        -256
+      ],
+      "id": "294ff0f5-b12d-44d2-8914-a7b4777713b6",
+      "name": "Dispatch to Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst governance = $('Dispatch to Agent').first().json;\n\nconst failed =\n  result.error ||\n  result.errorMessage ||\n  result.execution_error ||\n  result.execution_status === 'failed';\n\nreturn [{\n  json: {\n    ...governance,\n    ...result,\n\n    execution_result: failed ? 'failed' : 'success',\n    execution_completed_at: new Date().toISOString(),\n\n    agent_execution_status: failed\n      ? 'failed'\n      : 'completed',\n\n    execution_error: failed\n      ? String(\n          result.error ||\n          result.errorMessage ||\n          result.execution_error ||\n          'Agent execution failed.'\n        )\n      : '',\n\n    error_handled: failed,\n\n    governance_status: failed\n      ? 'execution_failed'\n      : 'agent_execution_completed',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        -304
+      ],
+      "id": "6b774c01-03a1-4cdc-818d-0f679caed85e",
+      "name": "Agent Execution Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1db29102-1872-4df2-8132-58c66e058014",
+              "leftValue": "={{ $json.execution_result }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4320,
+        -432
+      ],
+      "id": "c7abecc8-21a2-4fd3-9c2d-aac30cfa68ff",
+      "name": "Execution Successful?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    execution_result: 'failed',\n    agent_execution_status: 'failed',\n    execution_status: 'failed',\n\n    error_handled: true,\n\n    governance_status: 'execution_failed',\n\n    human_handoff: true,\n\n    failure_reason:\n      input.execution_error ||\n      'Agent execution failed without a specific error message.',\n\n    assistant_message:\n      'The requested operation could not be completed automatically and requires further handling.',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4608,
+        -336
+      ],
+      "id": "5a8dd03c-f4f4-4dbd-8d57-8f5edc49218f",
+      "name": "Handle Execution Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    execution_status: 'completed',\n    agent_execution_status: 'completed',\n    governance_status: 'execution_finalized',\n\n    final_decision: 'executed',\n    final_reason:\n      input.execution_reason ||\n      'Agent execution completed successfully.',\n\n    completed_at: new Date().toISOString(),\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4464,
+        -704
+      ],
+      "id": "c33eaed2-e436-43ab-9285-aaa7e6eef517",
+      "name": "Finalize Governance Execution"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    audit_event: 'governance_execution_completed',\n\n    audit: {\n      company_id: input.company_id || '',\n      session_id: input.session_id || '',\n      lead_id: input.lead_id || '',\n      opportunity_id: input.opportunity_id || '',\n      execution_id: input.execution_id || '',\n\n      governance_route: input.governance_route || '',\n      selected_agent: input.selected_agent || '',\n\n      policy_allowed: input.policy_allowed === true,\n      approval_required: input.approval_required === true,\n      permission_allowed: input.permission_allowed === true,\n\n      execution_result: input.execution_result || '',\n      final_decision: input.final_decision || '',\n\n      timestamp: new Date().toISOString()\n    },\n\n    governance_status: 'audit_ready',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4576,
+        -560
+      ],
+      "id": "a8e2a6e7-5832-4bef-986b-be9b81f303ed",
+      "name": "Prepare Governance Audit"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "RKqNJJJjPVsRKKM3",
+          "mode": "list",
+          "cachedResultName": "Governance Audit Logs",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "policy_allowed": "={{ String($('Prepare Governance Audit').first().json.audit.policy_allowed) }}",
+            "approval_required": "={{ String($('Prepare Governance Audit').first().json.audit.approval_required) }}",
+            "permission_allowed": "={{ String($('Prepare Governance Audit').first().json.audit.permission_allowed) }}",
+            "audit_id": "={{ 'AUD-' + $execution.id }}",
+            "company_id": "={{ $('Prepare Governance Audit').first().json.audit.company_id }}",
+            "session_id": "={{ $('Prepare Governance Audit').first().json.audit.session_id }}",
+            "lead_id": "={{ $('Prepare Governance Audit').first().json.audit.lead_id }}",
+            "opportunity_id": "={{ $('Prepare Governance Audit').first().json.audit.opportunity_id }}",
+            "execution_id": "={{ $('Prepare Governance Audit').first().json.audit.execution_id }}",
+            "governance_route": "={{ $('Prepare Governance Audit').first().json.audit.governance_route }}",
+            "selected_agent": "={{ $('Prepare Governance Audit').first().json.audit.selected_agent }}",
+            "execution_result": "={{ $('Prepare Governance Audit').first().json.audit.execution_result }}",
+            "final_decision": "={{ $('Prepare Governance Audit').first().json.audit.final_decision }}",
+            "audit_event": "={{ $('Prepare Governance Audit').first().json.audit_event }}",
+            "timestamp": "={{ $('Prepare Governance Audit').first().json.audit.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4688,
+        -720
+      ],
+      "id": "2cb16525-bb48-4908-ae94-eb089b6b0511",
+      "name": "Store Governance Audit"
+    },
+    {
+      "parameters": {
+        "jsCode": "const audit = $('Prepare Governance Audit').first().json;\n\nreturn [{\n  json: {\n    ...audit,\n\n    decision: audit.final_decision || '',\n\n    decision_reason:\n      audit.final_reason ||\n      audit.execution_reason ||\n      audit.policy_reason ||\n      '',\n\n    decision_status: 'recorded',\n\n    governance_status: 'decision_recorded',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4832,
+        -560
+      ],
+      "id": "d7926e02-e10b-40ee-8c7f-6e201cd01efa",
+      "name": "Prepare Governance Decision"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nlet response = '';\n\nif (input.insights && typeof input.insights === 'string') {\n  response = input.insights;\n}\nelse if (input.governance_route === 'opt_out') {\n  response = 'You have been unsubscribed and will no longer receive contact messages.';\n}\nelse if (input.human_handoff === true) {\n  response =\n    input.output ||\n    input.assistant_message ||\n    'This request requires human assistance.';\n}\nelse if (input.execution_result === 'success') {\n  response =\n    input.output ||\n    input.assistant_message ||\n    input.sub_workflow_output ||\n    `Your request has been routed to ${input.selected_agent || 'the appropriate agent'}.`;\n}\nelse if (input.execution_result === 'failed') {\n  response =\n    input.output ||\n    input.assistant_message ||\n    'The request could not be completed automatically and requires further handling.';\n}\nelse if (input.approval_status === 'pending') {\n  response =\n    input.output ||\n    input.assistant_message ||\n    'This request is waiting for approval before execution.';\n}\nelse {\n  response =\n    input.output ||\n    input.assistant_message ||\n    'Your request has been processed.';\n}\n\nreturn [{\n  json: {\n    ...input,\n    final_response: response,\n    response_status: 'ready',\n    governance_status: 'response_ready',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4976,
+        -688
+      ],
+      "id": "f2e1e02c-a890-4f14-a5c3-827a2d87ad17",
+      "name": "Prepare Final Governance Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet resolvedResponse = '';\n\nfor (const item of items) {\n  const json = item.json;\n  const candidate = json.output || json[\"output \"] || json.final_response || json.report || json.assistant_message || json.response;\n  if (candidate && candidate !== 'Your request has been routed to Marketing Agent.') {\n    resolvedResponse = candidate;\n    break;\n  }\n}\n\nconst primaryInput = items[0]?.json || {};\n\nif (!resolvedResponse) {\n  resolvedResponse = primaryInput.final_response || primaryInput.output || primaryInput[\"output \"] || primaryInput.report || primaryInput.assistant_message || primaryInput.response || 'Your request has been processed successfully.';\n}\n\nreturn [{\n  json: {\n    company_id: primaryInput.company_id || primaryInput.tenant_id || '',\n    tenant_id: primaryInput.tenant_id || primaryInput.company_id || '',\n    session_id: primaryInput.session_id || '',\n    lead_id: primaryInput.lead_id || '',\n    opportunity_id: primaryInput.opportunity_id || '',\n\n    governance_route: primaryInput.governance_route || '',\n    selected_agent: primaryInput.selected_agent || '',\n\n    policy_allowed: primaryInput.policy_allowed === true,\n    approval_required: primaryInput.approval_required === true,\n    permission_allowed: primaryInput.permission_allowed === true,\n    human_handoff: primaryInput.human_handoff === true,\n\n    execution_id: primaryInput.execution_id || '',\n    execution_status: primaryInput.execution_status || 'completed',\n    execution_result: primaryInput.execution_result || 'success',\n\n    decision: primaryInput.decision || 'executed',\n    decision_reason: primaryInput.decision_reason || '',\n\n    user_query: primaryInput.user_query || primaryInput.customer_message || '',\n    target_agent: primaryInput.target_agent || primaryInput.selected_agent || '',\n    intent: primaryInput.intent || 'general',\n\n    final_response: resolvedResponse,\n    assistant_message: resolvedResponse,\n    response_status: primaryInput.response_status || 'ready',\n    status: primaryInput.execution_status || 'completed',\n\n    governance_status: 'completed',\n    completed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5136,
+        -544
+      ],
+      "id": "9843fd77-eee1-45c2-bdf0-79a7375811df",
+      "name": "Return Governance Result"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Quote Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c1ab4b64-dad2-43ae-a04d-d605f7b0aab8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Quote & Proposal Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "da37bb52-0b01-4da9-934c-50fb9152d90d",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Appointment Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Appointment Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b356de42-8ebe-4ce4-91ff-58be7c180f33",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Sales Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sales Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "87299c7d-b77c-4f72-8dc3-9eb4524d462d",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Follow-up Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Follow-up Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cfe292fa-1f57-411f-adcc-9597edbc8041",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Opt-out Handler",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Opt-out Handler"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "23d59565-382d-4a76-93ca-7041f4ff52da",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Human Handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Human Handoff"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3e1ee214-32c2-498e-aa14-37da7699ba19",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Marketing Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Marketing Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a9b9f655-0467-4840-b329-87274fea726e",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Lead Capture Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Lead Capture Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "dff11772-8cf5-4428-bbc9-db500e3c1aa9",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Support Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "support_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8943483d-fc96-46cc-a6fd-9187b8b2bd35",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Feedback",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": " Feedback Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fde95a14-84ee-487d-8962-243d6d23d14e",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "WhatsApp Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "WhatsApp Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2320e120-6306-4c0f-83c0-fd101eec7c3c",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "Analytics",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Analytics"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "49976ced-548e-4cc1-a32b-6ccdef952189",
+                    "leftValue": "={{ $json.selected_agent }}",
+                    "rightValue": "General AI Agent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "General AI Agent"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": 12
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2784,
+        -320
+      ],
+      "id": "a8c5caa6-b8a8-4dbe-8470-f4547bf16674",
+      "name": "Route to Actual Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "i9b11LQSlwjw8k87",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Quote & Proposal Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "opportunity_id": "={{ $json.opportunity_id }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "business_need": "={{ $json.business_need }}",
+            "matched_solution": "={{ $json.matched_solution }}",
+            "next_step": "={{ $json.next_step }}",
+            "customer_message": "={{ $json.customer_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3424,
+        -1056
+      ],
+      "id": "35e150b4-4979-4188-a7b9-d68e5dcd6441",
+      "name": "Call Quote & Proposal Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "KaQJCEzCL3Lip83e",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Follow-up Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "opportunity_id": "={{ $json.opportunity_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "intent": "={{ $json.intent }}",
+            "qualification_status": "={{ $json.qualification_status }}",
+            "next_step": "={{ $json.next_step }}",
+            "customer_message": "={{ $json.customer_message }}",
+            "consent_to_contact": "={{ String($json.consent_to_contact) }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3424,
+        -592
+      ],
+      "id": "3bcb226f-e502-4955-80ec-3495a00e3d15",
+      "name": "Call 'Follow-up Agent'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n\n    governance_status: 'human_handoff',\n    execution_status: 'completed',\n    execution_result: 'success',\n\n    final_decision: 'human_handoff',\n    final_reason: 'Request requires human assistance.',\n    human_handoff: true,\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3408,
+        -448
+      ],
+      "id": "00fb4795-0919-4d96-adff-6be2d076efe0",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "yoVlUDKKgzu2beUd",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Booking AGent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $json.phone || '' }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "customer_name": "={{ $json.customer_name || '' }}",
+            "email": "={{ $json.email || '' }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "appointment_date": "={{ $json.appointment_date || null }}",
+            "appointment_time": "={{ $json.appointment_time || null }}",
+            "customer_message": "={{ $json.customer_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3424,
+        -896
+      ],
+      "id": "2a22bbcb-beb2-4128-8ac0-5d6e2c48dc9a",
+      "name": "Call 'Booking AGent'"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        -240
+      ],
+      "id": "7d879359-a5d7-417a-8aa2-903808c2471b",
+      "name": "Get Company DNA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "27ef7ddd-0de3-4241-90a3-ec743b45bca6",
+              "leftValue": "={{ $json.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        -240
+      ],
+      "id": "4b9e84fd-caf5-4160-bdf7-3de1177ec819",
+      "name": "Company DNA Found?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    governance_status: 'company_not_found',\n    policy_allowed: false,\n    permission_allowed: false,\n    approval_required: false,\n    human_handoff: true,\n    execution_status: 'blocked',\n    execution_result: 'failed',\n    final_decision: 'rejected',\n    final_reason: 'No Company DNA found for the provided company_id.',\n    assistant_message: 'I could not verify the company configuration for this request. Please contact support.',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -128
+      ],
+      "id": "3d70e4cb-4280-4ebc-9e12-3e94a802fd86",
+      "name": "Reject Governance Request"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UtGFb96PPXhDIN10",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Sales Agent sybworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": "={{ $json.consent_to_contact }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "name": "={{ $json.name || $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "region": "={{ $json.region || '' }}",
+            "intent": "={{ $json.intent }}",
+            "qualification_status": "={{ $json.qualification_status || $('When Executed by Another Workflow').first().json.qualification_status || 'unknown' }}",
+            "lead_summary": "={{ $json.lead_summary || (($json.name || $json.customer_name) + ' wants a quote for ' + $json.requested_service + ' (' + ($json.region || 'region not given') + ').') }}",
+            "criteria": "Prepare a quote for the requested service using only approved company pricing. Do not promise discounts or final prices without approval. Ask for any missing details (scope, size, timeline).",
+            "chatInput": "=Customer asked: \"{{ $json.customer_message }}\". Prepare a quote for {{ $json.requested_service }}."
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3424,
+        -752
+      ],
+      "id": "2787da63-7e8f-47a9-8cb5-49e1bb26bef4",
+      "name": "Call 'Sales Agent sybworkflow'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "oSnzskea0R5GYo2i",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Customer Support subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "company_name": "={{ $json.company_name }}",
+            "industry": "={{ $json.industry }}",
+            "services": "={{ $json.services }}",
+            "pricing": "={{ $json.pricing }}",
+            "policies": "={{ $json.policies }}",
+            "workflows": "={{ $json.workflows }}",
+            "permissions": "={{ $json.permissions }}",
+            "session_id": "={{ $json.session_id }}",
+            "user_message": "={{ $json.user_message || $json.intent }}",
+            "customer_message": "={{ $json.body?.customer_message || $json.customer_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        -16
+      ],
+      "id": "19d62fdf-6e1b-4356-800e-52a79c5637d5",
+      "name": "Call 'Customer Support subworkflow'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "u6UwHL66fiUr7bLJ",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Review & Feedback subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        128
+      ],
+      "id": "b31d4cec-be0d-46bd-a4d4-6a0fc08f41ad",
+      "name": "Call 'Review & Feedback subworkflow'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "3Urx1cH3TtImAmx3",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Marketing Campaign subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        -304
+      ],
+      "id": "675bc817-7ddc-4400-b97e-e0ebf4e3aa3d",
+      "name": "Call 'Marketing Campaign subworkflow'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "lGZGQ6Wey6AMwcXp",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "WhatsApp Engagement subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        288
+      ],
+      "id": "3461940d-09be-437b-afbd-cc6383917a79",
+      "name": "Call 'WhatsApp Engagement subworkflow'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ksi30BTbw45gGBKN",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Analytics & Insights subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        432
+      ],
+      "id": "8dd816a9-baf4-43e7-a3be-64f1db9e7df8",
+      "name": "Call 'Analytics & Insights subworkflow'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "q6K2DI1UymTDucCN",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "General AI Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $('When Executed by Another Workflow').item.json.session_id }}",
+            "intent": "={{ $('When Executed by Another Workflow').item.json.intent }}",
+            "requested_service": "={{ $('When Executed by Another Workflow').item.json.requested_service }}",
+            "governance_route": "={{ $json.governance_route }}",
+            "selected_agent": "={{ $json.selected_agent }}",
+            "customer_message": "={{ $('When Executed by Another Workflow').item.json.customer_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3392,
+        576
+      ],
+      "id": "50fc0130-bc78-4f15-b0d0-964f97efe635",
+      "name": "Call 'General AI Agent'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "zYI5fwO3AM35UTpp",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Lead Capture subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "company_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "user_message": "={{ $json.customer_message || $json.user_message }}",
+            "industry": "={{ $json.industry || \"\" }}",
+            "services": "={{ $json.requested_service }}",
+            "pricing": "={{ $json.industry || \"\" }}",
+            "policies": "={{ $json.policies || \"\" }}",
+            "workflows": "={{ $json.workflows }}",
+            "permissions": "={{ $json.permissions || \"\" }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "assistant_message": "={{ $json.assistant_message }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3408,
+        -160
+      ],
+      "id": "7f7260f2-c115-4fbb-ba88-6b5d6e907070",
+      "name": "Call 'Lead Capture subworkflow'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first()?.json || {};\nconst originalInput = $('Accept Governance Request').first().json || {};\n\nreturn [{  \n  json: {  \n    ...originalInput, \n    ...item,          \n    context_valid: item.company_id ? true : false  \n  }  \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -240
+      ],
+      "id": "d8540c08-e234-4c68-9137-300450321fcb",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Accept Governance Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept Governance Request": {
+      "main": [
+        [
+          {
+            "node": "Validate Governance Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Governance Context": {
+      "main": [
+        [
+          {
+            "node": "Get Company DNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Context Valid?": {
+      "main": [
+        [
+          {
+            "node": "Determine Governance Route",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Governance Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Governance Route": {
+      "main": [
+        [
+          {
+            "node": "Check Governance Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Governance Policy": {
+      "main": [
+        [
+          {
+            "node": "Check Approval Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Approval Required?": {
+      "main": [
+        [
+          {
+            "node": "Create Governance Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Governance Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Governance Route": {
+      "main": [
+        [
+          {
+            "node": "Start Agent Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Governance Approval": {
+      "main": [
+        [
+          {
+            "node": "Approval Decision?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Decision?": {
+      "main": [
+        [
+          {
+            "node": "Execute Governance Route",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Approval Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Agent Execution": {
+      "main": [
+        [
+          {
+            "node": "Check Agent Permission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Agent Permission": {
+      "main": [
+        [
+          {
+            "node": "Permission Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Permission Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Route to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Permission Denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Agent Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Dispatch to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispatch to Agent": {
+      "main": [
+        [
+          {
+            "node": "Route to Actual Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Execution Result": {
+      "main": [
+        [
+          {
+            "node": "Execution Successful?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Successful?": {
+      "main": [
+        [
+          {
+            "node": "Finalize Governance Execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Execution Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Governance Execution": {
+      "main": [
+        [
+          {
+            "node": "Prepare Governance Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Governance Audit": {
+      "main": [
+        [
+          {
+            "node": "Store Governance Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Governance Audit": {
+      "main": [
+        [
+          {
+            "node": "Prepare Governance Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Governance Decision": {
+      "main": [
+        [
+          {
+            "node": "Prepare Final Governance Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Final Governance Response": {
+      "main": [
+        [
+          {
+            "node": "Return Governance Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Governance Result": {
+      "main": []
+    },
+    "Route to Actual Agent": {
+      "main": [
+        [
+          {
+            "node": "Call Quote & Proposal Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Booking AGent'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Sales Agent sybworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Follow-up Agent'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Marketing Campaign subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Lead Capture subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Customer Support subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Review & Feedback subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WhatsApp Engagement subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Analytics & Insights subworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'General AI Agent'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Quote & Proposal Agent": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Follow-up Agent'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Booking AGent'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Company DNA": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company DNA Found?": {
+      "main": [
+        [
+          {
+            "node": "Context Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sales Agent sybworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Customer Support subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Review & Feedback subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Marketing Campaign subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WhatsApp Engagement subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Analytics & Insights subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'General AI Agent'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Lead Capture subworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Agent Execution Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Company DNA Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4a151973-0428-49c3-8347-f9d9c85c0609",
+  "meta": {
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "C1WSbQZtQVxPhpF2",
+  "tags": []
+}
