@@ -1,0 +1,959 @@
+{
+  "name": "Follow-up Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "lead_id"
+            },
+            {
+              "name": "company_id"
+            },
+            {
+              "name": "opportunity_id"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "customer_name"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "phone"
+            },
+            {
+              "name": "requested_service"
+            },
+            {
+              "name": "intent"
+            },
+            {
+              "name": "qualification_status"
+            },
+            {
+              "name": "next_step"
+            },
+            {
+              "name": "customer_message"
+            },
+            {
+              "name": "consent_to_contact",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        0
+      ],
+      "id": "8ef3a26d-ea22-4104-8e64-2d0c6f652ac8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    lead_id: input.lead_id || '',\n    company_id: input.company_id || '',\n    opportunity_id: input.opportunity_id || '',\n    session_id: input.session_id || '',\n    customer_name: input.customer_name || '',\n    email: input.email || '',\n    phone: input.phone || '',\n    requested_service: input.requested_service || '',\n    intent: input.intent || '',\n    qualification_status: input.qualification_status || '',\n    next_step: input.next_step || '',\n    customer_message: input.customer_message || '',\n    consent_to_contact: input.consent_to_contact ?? false,\n\n    follow_up_status: 'received',\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        0
+      ],
+      "id": "0ae2a1cc-0e70-4ca5-b89e-0e6a9ad453af",
+      "name": "Accept Follow-up"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "84d67c11-3dab-4279-8718-f09ee4a9f244",
+              "leftValue": "={{ $json.lead_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1c5e97ed-1de2-44f9-a949-e6ed31e24344",
+              "leftValue": "={{ $json.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7d5241eb-a7fc-46c1-afb3-078df6eb6982",
+              "leftValue": "={{ $json.consent_to_contact === true || $json.opt_out === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "83b37858-a3cf-42cb-a82d-93c7cd946473",
+      "name": "Validate Follow-up"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    follow_up_status: 'rejected',\n    reason: 'Follow-up request is missing required information or contact consent.',\n    assistant_message: 'The follow-up request could not be processed.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        96
+      ],
+      "id": "0b28b9c7-258f-45fc-95cf-c8ba30cf3fa1",
+      "name": "Reject Follow-up"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_id",
+              "keyValue": "={{ $('Accept Follow-up').first().json.lead_id }}"
+            },
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('Accept Follow-up').first().json.company_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        -96
+      ],
+      "id": "f276aa11-b5f4-488e-86dd-52412c6317ff",
+      "name": "Lead/Opportunity Lookup",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9fe39ddf-ebae-4ed9-b0a5-5e03e262990a",
+              "leftValue": "={{ \n  !String($('When Executed by Another Workflow').first().json.next_step || '').trim() || \n  ['follow_up','request_quote','request_appointment','general_inquiry','sales'].includes(String($('When Executed by Another Workflow').first().json.next_step || '').trim().toLowerCase()) \n}}",
+              "rightValue": "follow_up",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ce56cfcb-9198-4846-a7f3-a3b8c3e6d143",
+              "leftValue": "={{ $('When Executed by Another Workflow').first().json.consent_to_contact }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        -96
+      ],
+      "id": "039e3491-d078-4574-ab68-2f5e584962db",
+      "name": "Check Follow-up Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst accept = $('Accept Follow-up').first().json;\n\nconst nextStep = String(accept.next_step || '').trim().toLowerCase();\nconst intent = String(accept.intent || '').trim().toLowerCase();\nconst message = String(accept.customer_message || '').trim().toLowerCase();\n\nconst optOutFlag = accept.opt_out === true || input.opt_out === true;\n\nlet action = 'nurture';\n\nif (\n  optOutFlag ||\n  /\\b(stop|unsubscribe|opt[- ]?out)\\b/.test(message) ||\n  message.includes('do not contact') ||\n  message.includes(\"don't contact\")\n) {\n  action = 'opt_out';\n} else if (/\\b(human|representative|real person|live agent)\\b/.test(message)) {\n  action = 'human_handoff';\n} else if (\n  nextStep === 'request_quote' ||\n  /\\b(quote|quotation|pricing|price|cost)\\b/.test(message)\n) {\n  action = 'quote';\n} else if (\n  nextStep === 'request_appointment' ||\n  /\\b(appointment|schedule|book|meeting)\\b/.test(message)\n) {\n  action = 'appointment';\n} else if (\n  intent === 'purchase_intent' ||\n  nextStep === 'sales' ||\n  /\\b(sales|buy|purchase|upgrade|plan|subscription|package|tier)\\b/.test(message)\n) {\n  action = 'sales';\n} else if (\n  nextStep === 'support' ||\n  /\\b(ticket|urgent critical issue)\\b/.test(message)\n) {\n  action = 'human_handoff';\n}\n\nreturn [{\n  json: {\n    ...input,\n    ...accept,\n    follow_up_action: action,\n    follow_up_status: 'action_determined',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -96
+      ],
+      "id": "94d11013-c6c5-4767-b159-fbc187666c0c",
+      "name": "Determine Follow-up Action"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2037d1fb-d8e3-4170-b9ab-5fcd58cfebdb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sales"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3671a93c-1db2-4526-95e6-f93da2cdba2e",
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e9a55c08-3523-4616-a0e9-755cab09cfb0",
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "appointment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "appointment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "14e8ee62-0c27-4561-836c-24c23134a492",
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "nurture",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nurture"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6f6b02fb-393d-4dd2-9cac-b310cd81c884",
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "human_handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "human_handoff"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b08f4ad0-9fde-4f78-ba73-62bb5fcc1199",
+                    "leftValue": "={{ $json.follow_up_action }}",
+                    "rightValue": "opt_out",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "opt_out"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -96
+      ],
+      "id": "06784e9b-5b22-47e3-8571-5ee4048d7815",
+      "name": "Route Follow-up"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "i9b11LQSlwjw8k87",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Quote & Proposal Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "opportunity_id": "={{ $json.opportunity_id }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "email": "={{ $json.email }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "customer_message": "={{ $json.customer_message }}",
+            "business_need": "={{ $json.business_need || '' }}",
+            "matched_solution": "={{ $json.requested_service }}",
+            "next_step": "={{ $json.next_step }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        -272
+      ],
+      "id": "3c8813ea-0406-42ba-9c2a-e4230543ff81",
+      "name": "Call Quote Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_action: 'nurture',\n    follow_up_status: 'nurture',\n    next_step: 'nurture',\n    reason: 'Customer wants to continue later or is not ready to proceed now.',\n    assistant_message: 'No problem. I’ll keep this as a follow-up and we can continue when you’re ready.',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        48
+      ],
+      "id": "b82d220b-19ff-437c-91c8-7c5df01bf202",
+      "name": "Handle Nurture"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_action: 'human_handoff',\n    follow_up_status: 'human_handoff',\n    next_step: 'human_handoff',\n    human_handoff: true,\n    reason: 'Customer requested human assistance.',\n    assistant_message: 'I’ll connect you with a human team member who can assist you further.',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        176
+      ],
+      "id": "090b551c-e065-4114-be7f-1de901d1a48f",
+      "name": "Handle Human Handoff"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_action: 'opt_out',\n    follow_up_status: 'opted_out',\n    next_step: 'close_lost',\n    consent_to_contact: false,\n    reason: 'Customer opted out of further contact.',\n    assistant_message: 'Understood. We will not send further follow-up messages.',\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        320
+      ],
+      "id": "592c2782-6714-47d0-94a7-a002e08eef38",
+      "name": "Handle Opt Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_status: 'scheduled',\n    follow_up_scheduled_at: new Date(Date.now() + 60 * 1000).toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        -112
+      ],
+      "id": "13704e04-4557-4833-99b0-20e038ec5f17",
+      "name": "Schedule Follow-up"
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.follow_up_scheduled_at }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1984,
+        -112
+      ],
+      "id": "506ccc16-ebe6-48aa-888f-3b274e707fc0",
+      "name": "Wait Until Follow-up",
+      "webhookId": "33d5e289-d31d-4d5f-94ec-dd8879d20a50"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_status: 'executed',\n    executed_at: new Date().toISOString(),\n    assistant_message: input.assistant_message || 'Following up with you regarding your request.',\n    updated_at: new Date().toISOString()\n  }\n}];;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -112
+      ],
+      "id": "cf5b2ab6-57a9-44a7-922a-bea0666b2165",
+      "name": "Execute Follow-up"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "XMPtH9sdFmjpQxwF",
+          "mode": "list",
+          "cachedResultName": "followup activity",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "activity_id": "=FU-ACT-{{ $execution.id }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "opportunity_id": "={{ $json.opportunity_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "activity_type": "follow_up_executed",
+            "customer_request": "={{ $json.customer_message }}",
+            "agent_response": "={{ $json.assistant_message }}",
+            "follow_up_status": "={{ $json.follow_up_status }}",
+            "next_step": "={{ $json.next_step }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2336,
+        -112
+      ],
+      "id": "e80ea898-a443-453f-b7b5-95756e2d2a8b",
+      "name": "Log Follow-up Activity"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JdIdi8N9QNPEkY1E",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_id",
+              "keyValue": "={{ $('Accept Follow-up').first().json.lead_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": false,
+            "opt_out": false,
+            "updated_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2528,
+        -112
+      ],
+      "id": "d53c33b0-ecd9-4b8d-b365-a38a86580f27",
+      "name": "Update Follow-up Status",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const accept = $('Accept Follow-up').first().json;\nconst action = $('Determine Follow-up Action').first().json;\nconst execute = $('Execute Follow-up').first().json;\n\nreturn [{\n  json: {\n    lead_id: accept.lead_id || '',\n    company_id: accept.company_id || '',\n    opportunity_id: accept.opportunity_id || '',\n    session_id: accept.session_id || '',\n    customer_name: accept.customer_name || '',\n    email: accept.email || '',\n    phone: accept.phone || '',\n    requested_service: accept.requested_service || '',\n\n    follow_up_action: action.follow_up_action || '',\n    follow_up_status: execute.follow_up_status || 'executed',\n    next_step: execute.next_step || accept.next_step || '',\n    assistant_message: execute.assistant_message || '',\n    reason: execute.reason || '',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2736,
+        -112
+      ],
+      "id": "b053ce91-f05f-46d4-b745-b3af1971ead4",
+      "name": "Return Follow-up Result"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UtGFb96PPXhDIN10",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Sales Agent sybworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_to_contact": "={{ $json.consent_to_contact }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "region": "={{ $json.region }}",
+            "intent": "={{ $json.intent }}",
+            "qualification_status": "={{ $json.qualification_status }}",
+            "lead_summary": "={{ $json.name }} is interested in {{ $json.requested_service }} ({{ $json.region }}). Intent: {{ $json.intent }}. Customer said: \"{{ $json.customer_message }}\"",
+            "criteria": "Follow-up: customer needs time to decide. Be polite and not pushy, answer questions, suggest one clear next step.",
+            "chatInput": "=Follow-up: the customer earlier said \"{{ $json.customer_message }}\". Write a short, polite follow-up message."
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        -432
+      ],
+      "id": "4794fdbc-f216-4435-a146-9778bcf35ed2",
+      "name": "Call 'Sales Agent sybworkflow'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json;\n\nreturn [{\n  json: {\n    lead_id: input.lead_id,\n    company_id: input.company_id,\n    session_id: input.session_id,\n    follow_up_status: \"skipped\",\n    reason: \"next_step is not follow_up or no consent to contact\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        128
+      ],
+      "id": "bdd89e6e-da19-418f-bdf4-99840562bc0d",
+      "name": "Skip Follow-up"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "yoVlUDKKgzu2beUd",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Booking AGent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $json.phone }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.appointment_date || '' }}",
+            "requested_service": "={{ $json.requested_service }}",
+            "appointment_date": "={{ $json.appointment_date }}",
+            "appointment_time": "={{ $json.appointment_time }}",
+            "customer_message": "={{ $('When Executed by Another Workflow').item.json.customer_message }}",
+            "lead_id": "={{ $('When Executed by Another Workflow').item.json.lead_id }}",
+            "company_id": "={{ $('When Executed by Another Workflow').item.json.company_id }}",
+            "session_id": "={{ $('When Executed by Another Workflow').item.json.session_id }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        -128
+      ],
+      "id": "9168a12a-47a4-48fe-98f6-936287076628",
+      "name": "Call 'Booking AGent'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Accept Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Validate Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Lead/Opportunity Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead/Opportunity Lookup": {
+      "main": [
+        [
+          {
+            "node": "Check Follow-up Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Follow-up Status": {
+      "main": [
+        [
+          {
+            "node": "Determine Follow-up Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Follow-up Action": {
+      "main": [
+        [
+          {
+            "node": "Route Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sales Agent sybworkflow'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call Quote Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Booking AGent'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Nurture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Opt Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Wait Until Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Execute Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Log Follow-up Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Follow-up Activity": {
+      "main": [
+        [
+          {
+            "node": "Update Follow-up Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Follow-up Status": {
+      "main": [
+        [
+          {
+            "node": "Return Follow-up Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Quote Agent": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Nurture": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Opt Out": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sales Agent sybworkflow'": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Booking AGent'": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a77af919-b3e1-472a-9d02-eb1397bb935a",
+  "meta": {
+    "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
+  },
+  "nodeGroups": [],
+  "id": "KaQJCEzCL3Lip83e",
+  "tags": []
+}
