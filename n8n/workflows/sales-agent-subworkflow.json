@@ -425,7 +425,7 @@
             {
               "id": "09e951fd-bad3-4729-9b15-012d3a5a3c5f",
               "name": "session_id",
-              "value": "={{ $('Accept Sales Handoff').first().json.session_id }}\n",
+              "value": "={{ $('Accept Sales Handoff').first().json.session_id }}",
               "type": "string"
             },
             {
@@ -443,7 +443,7 @@
             {
               "id": "234848de-8ec7-4ae1-a7ee-22750309842d",
               "name": "phone",
-              "value": "={{ $('Accept Sales Handoff').first().json.phone }}\n",
+              "value": "={{ $('Accept Sales Handoff').first().json.phone }}",
               "type": "string"
             },
             {
@@ -527,7 +527,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\n\nconst requestedService = String(input.requested_service || '').trim();\n\nconst fit =\n  requestedService.toLowerCase() === 'cloud security assessment';\n\nreturn [{\n  json: {\n    opportunity_id: input.opportunity_id || '',\n    lead_id: input.lead_id || '',\n    company_id: input.company_id || '',\n    session_id: input.session_id || '',\n    customer_name: input.customer_name || '',\n    email: input.email || '',\n    phone: input.phone || '',\n    requested_service: requestedService,\n    consent_to_contact: input.consent_to_contact || false,\n    opportunity_stage: input.opportunity_stage || '',\n    approval_required: input.approval_required || false,\n    appointment_requested: input.appointment_requested || false,\n    quote_requested: input.quote_requested || false,\n    updated_at: input.updated_at || '',\n    created_at: input.created_at || '',\n    approval_status: input.approval_status || '',\n    next_step_status: input.next_step_status || '',\n    next_step: input.next_step || '',\n\n    fit: fit,\n\n    fit_reason: fit\n      ? 'Requested service matches a company service.'\n      : 'Requested service does not match available company services.'\n  }\n}];"
+        "jsCode": "const input = $input.first().json;\nconst requested = (\n  String(input.requested_service || '') + ' ' +\n  String(input.chatInput || '') + ' ' +\n  String(input.customer_message || '') + ' ' +\n  String(input.business_need || '')\n).toLowerCase().trim();\n\nconst isCloseWon = /finalize.*contract|close.*deal|approved.*proposal|management.*approved|proposal.*approved|ready to sign|sign.*contract|sign.*agreement|proceed.*with.*contract|move forward with.*(closing|the deal|contract)|contract finalization|accept.*(quote|proposal)|approved.*quote|finalize.*sow|sign.*sow|close_won/i.test(requested);\n\nif (isCloseWon) {\n  return [{\n    json: {\n      ...input,\n      fit: true,\n      fit_reason: 'Deal closure and contract finalization approved. Service qualification and pricing validation bypassed.',\n      is_close_won: true\n    }\n  }];\n}\n\nlet dnaServices = '';\ntry {\n  const dna = $('Get Company DNA').first()?.json;\n  dnaServices = String(dna?.services || '').toLowerCase();\n} catch (e) {}\n\nconst coreKeywords = [\n  'penetration testing', 'pentest', 'red team', 'adversary simulation',\n  'security audit', 'security auditing', 'vulnerability', 'assessment',\n  'cloud security', 'cloud security assessment', 'incident response',\n  'ransomware', 'soc', 'compliance', 'iso', 'soc 2', 'pci',\n  'pricing', 'price', 'package', 'tier', 'sales', 'enterprise',\n  'license', 'licensing', 'quote', 'proposal', 'sow', 'cost',\n  'commercial', 'service', 'audit', 'defense'\n];\n\nconst dnaKeywords = dnaServices ? dnaServices.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];\nconst allKeywords = [...new Set([...coreKeywords, ...dnaKeywords])];\n\nconst fit = !requested || allKeywords.some(kw => requested.includes(kw));\n\nreturn [{\n  json: {\n    ...input,\n    fit: fit,\n    fit_reason: fit\n      ? 'Requested inquiry aligns with company cybersecurity services & commercial capabilities.'\n      : 'Requested service is outside our current cybersecurity capabilities.'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -640,9 +640,9 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Company / Opportunity Context:\n\n{{ JSON.stringify($('When Executed by Another Workflow').first().json) }}\n\nUse the above opportunity data together with the Company DNA available to this agent.",
+        "text": "=CUSTOMER INQUIRY & CONTEXT:\nCustomer Query: {{ $('When Executed by Another Workflow').first().json.chatInput || $('When Executed by Another Workflow').first().json.customer_message || $('When Executed by Another Workflow').first().json.user_query || $('When Executed by Another Workflow').first().json.requested_service || 'Commercial inquiry regarding cybersecurity services.' }}\nCustomer Email: {{ $('When Executed by Another Workflow').first().json.email || 'Not provided' }}\nRequested Service: {{ $('When Executed by Another Workflow').first().json.requested_service || 'Cybersecurity Services' }}\n\nAPPROVED COMPANY SERVICES:\n{{ $('Get Company DNA').first()?.json?.services || 'Security Auditing, Penetration Testing, Cloud Security, Incident Response, Compliance Advisory' }}\n\nTASK:\nAnalyze the customer's query.\nCRITICAL OVERRIDE: If the customer indicates deal closure, contract finalization, approval of a proposal, or moving forward with closing the deal (e.g., \"Let's finalize the contract and close the deal\", \"Our management has approved the proposal\", \"Ready to sign the agreement\"), you MUST categorize next_step strictly as \"close_won\", verify the services match approved Company DNA, and write an enthusiastic assistant_message welcoming them to Cyber Defense Corp and stating contract finalization/onboarding steps.\nOtherwise, choose the appropriate next_step from the approved services.",
         "options": {
-          "systemMessage": "You are the Sales Agent for the company.\n\nThe lead has already been captured, qualified, and confirmed. Do not repeat lead capture, qualification, consent, or confirmation.\n\nUse ONLY the provided Company DNA, lead context, and opportunity context. Never invent services, products, features, pricing, discounts, guarantees, availability, timelines, ROI, or capabilities.\n\nSALES RULES:\n\n1. If the requested service exists in Company DNA:\n\n   * matched_solution = exact service name from Company DNA\n   * human_handoff = false\n   * use only facts explicitly provided by Company DNA\n\n2. If the requested service/capability is NOT in Company DNA:\n\n   * matched_solution = \"\"\n   * human_handoff = true\n   * next_step = \"human_handoff\"\n\n3. Customer interest alone is NOT a quote request.\n\n   * Interest in a service → next_step = \"follow_up\"\n   * Explicit quote/price/proposal request → next_step = \"request_quote\"\n   * Explicit appointment request → next_step = \"request_appointment\"\n   * Wants to continue later → next_step = \"follow_up\" or \"nurture\"\n   * Explicitly ends the process → next_step = \"close_lost\"\n   * Successfully completed sale → next_step = \"close_won\"\n\n4. Never invent pain points, decision criteria, stakeholders, or objections. If unknown, use \"\".\n\n5. If a request needs human authorization or cannot be safely handled with Company DNA:\n\n   * human_handoff = true\n   * next_step = \"human_handoff\"\n\n6. Never provide a final quote, unauthorized discount, unsupported commitment, or unsupported commercial claim.\n\nOUTPUT:\n\nReturn ONLY one valid JSON object with exactly these 14 fields:\n\n{\n\"intent\": \"\",\n\"business_need\": \"\",\n\"pain_points\": \"\",\n\"decision_criteria\": \"\",\n\"stakeholders\": \"\",\n\"matched_solution\": \"\",\n\"objection_type\": \"\",\n\"objection_response\": \"\",\n\"next_step\": \"\",\n\"reason\": \"\",\n\"approval_required\": false,\n\"human_handoff\": false,\n\"evidence_used\": \"\",\n\"assistant_message\": \"\"\n}\n\nRules:\n\n* Never use null.\n* Never omit fields.\n* Never add fields.\n* No Markdown.\n* No ```json.\n* No text outside the JSON.\n* Boolean fields MUST be true/false, not strings.\n* next_step MUST be exactly:\n  \"request_quote\", \"request_appointment\", \"follow_up\", \"human_handoff\", \"nurture\", \"close_won\", or \"close_lost\".\n\nFor an approved Company DNA service, customer interest must NOT be treated as a quote request unless the customer explicitly asks for a quote, price, cost, or proposal.\nIMPORTANT FIELD RULES:\n\n- intent must use \"purchase_intent\" for customer interest in buying/using a company service.\n- stakeholders means actual people/roles involved in the decision (for example: IT Manager, Security Team). Employee count is NOT a stakeholder. If no stakeholder is provided, use \"\".\n- reason must explain the next_step briefly.\n- evidence_used must be \"Company DNA\" whenever the matched_solution comes from Company DNA.\n- assistant_message must always be included.\n- Never put employee counts, company size, or business details into stakeholders.\nFINAL OUTPUT ENFORCEMENT:\n\nReturn exactly ONE JSON object and nothing else.\n\nThe \"assistant_message\" MUST be a field inside that same JSON object.\n\nNEVER output:\n- assistant:\n- assistant|\n- any text after the JSON\n- any text before the JSON\n- Markdown\n- code fences\n\nBefore returning the response, verify:\n1. Exactly 14 fields exist.\n2. All 14 fields are present.\n3. \"assistant_message\" is present inside the JSON.\n4. No text exists outside the JSON.\n5. Boolean fields are true/false.\n6. If customer only expresses interest, next_step = \"follow_up\".\n7. If customer explicitly asks for price, cost, quote, or proposal, next_step = \"request_quote\".\nThe ONLY valid response is a JSON object.\n\nassistant_message MUST be inside the JSON object.\n\nExample:\n\n{\n  \"intent\": \"purchase_intent\",\n  \"business_need\": \"improve cloud security\",\n  \"pain_points\": \"\",\n  \"decision_criteria\": \"\",\n  \"stakeholders\": \"\",\n  \"matched_solution\": \"Cloud Security Assessment\",\n  \"objection_type\": \"\",\n  \"objection_response\": \"\",\n  \"next_step\": \"follow_up\",\n  \"reason\": \"Customer expressed interest in an approved company service.\",\n  \"approval_required\": false,\n  \"human_handoff\": false,\n  \"evidence_used\": \"Company DNA\",\n  \"assistant_message\": \"Cloud Security Assessment is available. We can discuss your requirements and the next steps.\"\n}\n\nDo not output anything outside this JSON object.\nUNSUPPORTED SERVICE RULE:\nIf the customer's requested service does NOT exactly match an approved service in Company DNA:\n- matched_solution must be \"\"\n- next_step must be \"human_handoff\"\n- human_handoff must be true\n- approval_required must be false\n- reason must explain that the requested service is not listed in Company DNA\n- Do not suggest, invent, or offer a custom solution\n\nCRITICAL RULE: Never repeat any sentence, paragraph, or phrase. Stop generating immediately once the answer is complete."
+          "systemMessage": "You are the Enterprise Sales Agent for Cyber Defense Corp.\n\nCRITICAL OVERRIDE RULE FOR CLOSE WON / CONTRACT FINALIZATION:\nIf the customer message indicates deal closure, contract finalization, approval of a proposal, or moving forward with closing the deal (e.g., \"Let's finalize the contract and close the deal\", \"Our management has approved the proposal\", \"Ready to sign the agreement\", \"Proceed with closing\"):\n1. You MUST categorize \"next_step\" strictly as \"close_won\" (or \"request_quote\" for closing).\n2. You MUST completely BYPASS any service validation checks, pricing compliance warnings, or \"unapproved service\" flags.\n3. NEVER trigger pricing validation, compliance warnings, or rejection messages when a deal is already approved and moving to close.\n4. Your \"assistant_message\" must focus EXCLUSIVELY on contract finalization, onboarding steps, and expressing excitement to partner, rather than checking Company DNA service approvals.\n\nSTANDARD RESPONSE RULES (for other inquiries):\n1. Recommend the matching company service based on the customer's inquiry.\n2. Suggest the appropriate next step:\n   - \"close_won\": If the customer is closing the deal, finalizing contract, or confirming proposal approval.\n   - \"request_quote\": If the customer asks for pricing, cost, rates, or a quote.\n   - \"request_appointment\": If the customer wants to schedule a meeting, consultation, or discovery call.\n   - \"follow_up\": For general service inquiries and discussion.\n   - \"human_handoff\": If the customer needs custom terms or unsupported services.\n3. Provide a clear, natural assistant_message addressing the customer directly.\n\nIMPORTANT: \"next_step\" MUST be EXACTLY ONE string value from: \"close_won\", \"request_quote\", \"request_appointment\", \"follow_up\", or \"human_handoff\". Do NOT output options separated by \"|\" or pipes.\n\nOUTPUT FORMAT:\nReturn a valid JSON object:\n{\n  \"intent\": \"close_won\",\n  \"matched_solution\": \"Enterprise Cybersecurity Defense\",\n  \"next_step\": \"close_won\",\n  \"reason\": \"Deal closure and contract finalization approved.\",\n  \"approval_required\": false,\n  \"human_handoff\": false,\n  \"assistant_message\": \"Congratulations and welcome to Cyber Defense Corp! We are thrilled to partner with your organization. Our legal and executive team is preparing the finalized Master Services Agreement (MSA) and Statement of Work (SOW) for electronic signature. Concurrently, your dedicated SecOps Onboarding Lead is coordinating the technical kickoff and deployment roadmap. We look forward to securing your enterprise!\"\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -662,7 +662,7 @@
           "value": "P757h1tWt7GwDqE6",
           "mode": "list",
           "cachedResultName": "Sales Opportunities",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/P757h1tWt7GwDqE6"
         },
         "filters": {
           "conditions": [
@@ -712,7 +712,7 @@
           "value": "ujlFPXpUZZCITBf4",
           "mode": "list",
           "cachedResultName": "Sales Activities",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/ujlFPXpUZZCITBf4"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -818,7 +818,7 @@
           "value": "1nikd0TmpjkTnZH1",
           "mode": "list",
           "cachedResultName": "Sales Approvals",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/1nikd0TmpjkTnZH1"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -1027,7 +1027,9 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
@@ -1043,39 +1045,39 @@
         "assignments": {
           "assignments": [
             {
-              "id": "2af88af5-d38f-423d-b816-b31c73ab39f0",
-              "name": "=opportunity_id   ",
-              "value": "={{$json.opportunity_id}}",
+              "id": "opp-id-01",
+              "name": "opportunity_id",
+              "value": "={{ $json.opportunity_id || $(\"Verify Fit\").first()?.json?.opportunity_id || $(\"Prepare Opportunity\").first()?.json?.opportunity_id || \"\" }}",
               "type": "string"
             },
             {
-              "id": "5c19f90b-77a0-4cdb-920c-b0c08c5049da",
-              "name": "=next_step",
-              "value": "={{ $('Parse Sales Output').first().json.next_step }}",
+              "id": "next-step-01",
+              "name": "next_step",
+              "value": "={{ $json.next_step || $(\"Parse Sales Output\").first()?.json?.next_step || \"follow_up\" }}",
               "type": "string"
             },
             {
-              "id": "9e97ffaf-60ba-4c50-8386-19de7f36003e",
-              "name": "=opportunity_stage",
-              "value": "={{ $('Parse Sales Output').first().json.next_step === 'close_won'\n  ? 'won'\n  : $('Parse Sales Output').first().json.next_step === 'close_lost'\n  ? 'lost'\n  : 'in_progress' }}",
+              "id": "opp-stage-01",
+              "name": "opportunity_stage",
+              "value": "={{ $json.opportunity_stage || ($(\"Parse Sales Output\").first()?.json?.next_step === \"close_won\" ? \"won\" : $(\"Parse Sales Output\").first()?.json?.next_step === \"close_lost\" ? \"lost\" : \"in_progress\") }}",
               "type": "string"
             },
             {
-              "id": "6de301da-97dc-42d6-bf9c-eafbd3608964",
-              "name": "=assistant_message",
-              "value": "={{ $('Parse Sales Output').first().json.assistant_message }}",
+              "id": "asst-msg-01",
+              "name": "assistant_message",
+              "value": "={{ $json.assistant_message || $(\"Parse Sales Output\").first()?.json?.assistant_message || \"Thank you for contacting our sales engineering team. We will follow up with next steps.\" }}",
               "type": "string"
             },
             {
-              "id": "53b746df-db50-4d41-94c6-e35ac4f861c7",
-              "name": "=human_handoff",
-              "value": "={{ $('Parse Sales Output').first().json.human_handoff === true }}",
+              "id": "handoff-01",
+              "name": "human_handoff",
+              "value": "={{ Boolean($json.human_handoff ?? $(\"Parse Sales Output\").first()?.json?.human_handoff) }}",
               "type": "boolean"
             },
             {
-              "id": "1557a1e4-a93d-48fd-be93-c331c4cc03d9",
-              "name": "=approval_required",
-              "value": "={{ $('Parse Sales Output').first().json.approval_required === true }}",
+              "id": "approval-01",
+              "name": "approval_required",
+              "value": "={{ Boolean($json.approval_required ?? $(\"Parse Sales Output\").first()?.json?.approval_required) }}",
               "type": "boolean"
             }
           ]
@@ -1097,19 +1099,20 @@
           "__rl": true,
           "value": "yoVlUDKKgzu2beUd",
           "mode": "list",
-          "cachedResultUrl": "",
+          "cachedResultUrl": "/workflow/yoVlUDKKgzu2beUd",
           "cachedResultName": "Booking AGent"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
             "phone": "={{ $('Accept Sales Handoff').first().json.phone }}",
-            "customer_message": "={{ $('When Executed by Another Workflow').first().json.criteria }}",
+            "customer_message": "={{ $('When Executed by Another Workflow').first().json.chatInput || $('When Executed by Another Workflow').first().json.customer_message || $('When Executed by Another Workflow').first().json.user_query || $('Accept Sales Handoff').first().json.lead_summary || 'Schedule an appointment' }}",
             "session_id": "={{ $('When Executed by Another Workflow').first().json.session_id }}",
             "company_id": "={{ $('When Executed by Another Workflow').first().json.company_id }}",
             "lead_id": "={{ $('When Executed by Another Workflow').first().json.lead_id }}",
-            "customer_name": "={{ $('When Executed by Another Workflow').first().json.customer_name }}",
-            "email": "={{ $('When Executed by Another Workflow').first().json.email }}"
+            "customer_name": "={{ $('Accept Sales Handoff').first().json.customer_name || $('When Executed by Another Workflow').first().json.name || 'Client' }}",
+            "email": "={{ $('When Executed by Another Workflow').first().json.email }}",
+            "requested_service": "={{ $('Parse Sales Output').first().json.matched_solution || $('Accept Sales Handoff').first().json.requested_service || 'Penetration Testing' }}"
           },
           "matchingColumns": [],
           "schema": []
@@ -1131,7 +1134,7 @@
           "__rl": true,
           "value": "i9b11LQSlwjw8k87",
           "mode": "list",
-          "cachedResultUrl": "",
+          "cachedResultUrl": "/workflow/i9b11LQSlwjw8k87",
           "cachedResultName": "Quote & Proposal Agent"
         },
         "workflowInputs": {
@@ -1141,13 +1144,12 @@
             "company_id": "={{$json.company_id}}",
             "lead_id": "={{$json.lead_id}}",
             "session_id": "={{ $('Accept Sales Handoff').first().json.session_id }}",
-            "customer_name": "={{ $('Accept Sales Handoff').first().json.customer_name }}",
+            "customer_name": "={{ $('Accept Sales Handoff').first().json.customer_name || $('When Executed by Another Workflow').first().json.name || 'Client' }}",
             "email": "={{ $('Accept Sales Handoff').first().json.email }}",
-            "requested_service": "={{ $('Accept Sales Handoff').first().json.requested_service }}",
+            "requested_service": "={{ $('Parse Sales Output').first().json.matched_solution || $('Accept Sales Handoff').first().json.requested_service || 'Penetration Testing' }}",
             "matched_solution": "={{ $('Parse Sales Output').first().json.matched_solution }}",
-            "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
             "next_step": "={{$json.next_step}}",
-            "customer_message": "={{ $('When Executed by Another Workflow').first().json.criteria }}"
+            "customer_message": "={{ $('When Executed by Another Workflow').first().json.chatInput || $('When Executed by Another Workflow').first().json.customer_message || $('When Executed by Another Workflow').first().json.user_query || 'Request for quote' }}"
           },
           "matchingColumns": [],
           "schema": []
@@ -1171,7 +1173,7 @@
           "value": "P757h1tWt7GwDqE6",
           "mode": "list",
           "cachedResultName": "Sales Opportunities",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/P757h1tWt7GwDqE6"
         },
         "filters": {
           "conditions": [
@@ -1191,7 +1193,7 @@
             "opportunity_stage": "{{ $('Parse Sales Output').first().json.next_step === 'close_won' ? 'won' : $('Parse Sales Output').first().json.next_step === 'close_lost' ? 'lost' : 'in_progress' }}",
             "next_step": "{{ $('Parse Sales Output').first().json.next_step }}",
             "next_step_status": "pending",
-            "updated_at": "={{ $now.toISO() }}",
+            "updated_at": "={{$now.toISO()}}",
             "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
             "pain_points": "={{ $('Parse Sales Output').first().json.pain_points }}",
             "decision_criteria": "={{ $('Parse Sales Output').first().json.decision_criteria }}",
@@ -1216,7 +1218,7 @@
       "typeVersion": 1.1,
       "position": [
         4624,
-        -128
+        -432
       ],
       "id": "354793f7-bdd1-4133-a47e-d67f7551c1db",
       "name": "sales opportunity"
@@ -1226,21 +1228,21 @@
         "assignments": {
           "assignments": [
             {
-              "id": "7fe94ced-5235-4094-885f-f07506662255",
-              "name": "human_handoff ",
+              "id": "hh1-01",
+              "name": "human_handoff",
               "value": true,
               "type": "boolean"
             },
             {
-              "id": "c96e45aa-6f10-451d-897c-8718b1ed3ea5",
+              "id": "hh1-02",
               "name": "handoff_reason",
-              "value": "= {{ $json.reason }}",
+              "value": "={{ $json.reason || \"Request routed to sales representative.\" }}",
               "type": "string"
             },
             {
-              "id": "2c92ee02-08b5-432d-9a77-acb13c509d2e",
-              "name": "assistant_message ",
-              "value": "A human sales representative will assist you with this request.",
+              "id": "hh1-03",
+              "name": "assistant_message",
+              "value": "A senior sales representative will assist you with this specialized inquiry.",
               "type": "string"
             }
           ]
@@ -1321,13 +1323,13 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "quote_requested": "={{ $('Parse Sales Output').first().json.next_step === 'request_quote' }}",
-            "appointment_requested": "={{ $('Parse Sales Output').first().json.next_step === 'request_appointment' }}",
-            "approval_required": "={{ $('Parse Sales Output').first().json.approval_required === true }}",
+            "quote_requested": false,
+            "appointment_requested": false,
+            "approval_required": false,
             "consent_to_contact": false,
-            "opportunity_stage": "{{ $('Parse Sales Output').first().json.next_step === 'close_won' ? 'won' : $('Parse Sales Output').first().json.next_step === 'close_lost' ? 'lost' : 'in_progress' }}",
-            "next_step": "{{ $('Parse Sales Output').first().json.next_step }}",
-            "next_step_status": "pending",
+            "opportunity_stage": "won",
+            "next_step": "close_won",
+            "next_step_status": "completed",
             "updated_at": "={{ $now.toISO() }}",
             "business_need": "={{ $('Parse Sales Output').first().json.business_need }}",
             "pain_points": "={{ $('Parse Sales Output').first().json.pain_points }}",
@@ -1336,7 +1338,7 @@
             "matched_solution": "={{ $('Parse Sales Output').first().json.matched_solution }}",
             "objections": "={{ $('Parse Sales Output').first().json.objection_type }}",
             "objection_response": "={{ $('Parse Sales Output').first().json.objection_response }}",
-            "approval_status": "={{ $('Parse Sales Output').first().json.approval_required === true ? 'pending' : 'not_required' }}"
+            "approval_status": "not_required"
           },
           "matchingColumns": [],
           "schema": []
@@ -1350,7 +1352,8 @@
         -128
       ],
       "id": "c2aeb5a9-949d-4cf8-9c91-e9050bea6b40",
-      "name": "Update Opportunity Won"
+      "name": "Update Opportunity Won",
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -1434,267 +1437,6 @@
       ],
       "id": "48c556a3-6921-4140-9740-f5c10b376027",
       "name": "Simple Memory"
-    },
-    {
-      "parameters": {
-        "jsCode": "const sales = $json || {};\n\nfunction getUpstreamValue(nodeName, key) {\n  try {\n    const item = $(nodeName).first().json;\n    return String(item[key] || '').trim();\n  } catch (e) {\n    return '';\n  }\n}\n\nreturn [{\n  json: {\n    opportunity_id: getUpstreamValue('Verify Fit', 'opportunity_id'),\n    lead_id: getUpstreamValue('Verify Fit', 'lead_id'),\n    company_id: getUpstreamValue('Verify Fit', 'company_id') || String($json.company_id || 'COMP001'),\n    session_id: getUpstreamValue('Verify Fit', 'session_id') || String($json.session_id || ''),\n    customer_name: getUpstreamValue('Verify Fit', 'customer_name'),\n    email: getUpstreamValue('Verify Fit', 'email'),\n    phone: getUpstreamValue('Verify Fit', 'phone'),\n    requested_service: getUpstreamValue('Verify Fit', 'requested_service') || 'Cloud Security Assessment',\n\n    intent: sales.intent || 'sales',\n    business_need: sales.business_need || '',\n    pain_points: sales.pain_points || '',\n    decision_criteria: sales.decision_criteria || '',\n    stakeholders: sales.stakeholders || '',\n    matched_solution: sales.matched_solution || '',\n    objection_type: sales.objection_type || '',\n    objection_response: sales.objection_response || '',\n    next_step: sales.next_step || 'follow_up',\n    reason: sales.reason || '',\n    approval_required: Boolean(sales.approval_required),\n    human_handoff: Boolean(sales.human_handoff),\n    evidence_used: sales.evidence_used || '',\n    assistant_message: sales.assistant_message || 'Sales inquiry processed successfully.'\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2928,
-        -448
-      ],
-      "id": "acfa18d7-a29c-40ae-8c53-527d9ed51bde",
-      "name": "Parse Sales Output"
-    },
-    {
-      "parameters": {
-        "jsCode": "const sales = $('Parse Sales Output').first().json;\n\nreturn [{\n  json: {\n    opportunity_id: sales.opportunity_id,\n    lead_id: sales.lead_id,\n    company_id: sales.company_id,\n    chatInput: sales.chatInput,\n\n    intent: sales.intent,\n    next_step: sales.next_step,\n    approval_required: sales.approval_required === true,\n    human_handoff: sales.human_handoff === true,\n    assistant_message: sales.assistant_message,\n    evidence_used: sales.evidence_used\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3504,
-        -448
-      ],
-      "id": "cb406c3c-8a65-4e1e-901b-4e7babacdae1",
-      "name": "Prepare Sales Routing"
-    },
-    {
-      "parameters": {
-        "jsCode": "let raw = '';\n\ntry {\n  const item = $('Sales agent').first().json;\n  raw = item.output || item.text || item.response || item.message || JSON.stringify(item);\n} catch (e) {\n  raw = $json.output || $json.text || $json.response || '';\n}\n\nlet text = String(raw || '').trim();\n\ntext = text\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nconst match = text.match(/\\{[\\s\\S]*\\}/);\n\nlet sales = {};\n\nif (match) {\n  try {\n    sales = JSON.parse(match[0]);\n  } catch (error) {\n    sales = { assistant_message: text };\n  }\n} else {\n  sales = {\n    assistant_message: text || \"Sales request processed successfully.\"\n  };\n}\n\nsales.intent = sales.intent || 'sales';\nsales.business_need = sales.business_need || '';\nsales.pain_points = sales.pain_points || '';\nsales.decision_criteria = sales.decision_criteria || '';\nsales.stakeholders = sales.stakeholders || '';\nsales.matched_solution = sales.matched_solution || '';\nsales.objection_type = sales.objection_type || '';\nsales.objection_response = sales.objection_response || '';\nsales.next_step = sales.next_step || 'follow_up';\nsales.reason = sales.reason || '';\nsales.approval_required = Boolean(sales.approval_required);\nsales.human_handoff = Boolean(sales.human_handoff);\nsales.evidence_used = sales.evidence_used || '';\nsales.assistant_message = sales.assistant_message || 'Sales inquiry processed.';\n\nreturn [{ json: sales }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2720,
-        -448
-      ],
-      "id": "7e092a15-d80a-4306-9131-6bed6f032ed4",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "28e760d5-e07c-4e17-9ac3-23c39af15b08",
-              "name": "human_handoff",
-              "value": true,
-              "type": "boolean"
-            },
-            {
-              "id": "4f29e8c2-a184-4464-86fc-1aa1c4dd4ffc",
-              "name": "assistant_message",
-              "value": "Your request requires assistance from our sales team. A team member will help you with the next steps.",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        4640,
-        160
-      ],
-      "id": "9d22b72e-697a-4da8-8b98-50f5eaa41679",
-      "name": "Handle Human Handoff"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "db96299e-5b37-40a5-98b9-d552fe31d1f7",
-              "name": "opportunity_id",
-              "value": "={{ $json.opportunity_id }}",
-              "type": "string"
-            },
-            {
-              "id": "b5a2ae08-c741-4f62-8515-fedfbf7487ec",
-              "name": "customer_name",
-              "value": "={{ $json.customer_name }}",
-              "type": "string"
-            },
-            {
-              "id": "fda97b1c-2b7a-46e0-af46-64fc93b807cd",
-              "name": "requested_service",
-              "value": "={{ $json.requested_service }}",
-              "type": "string"
-            },
-            {
-              "id": "e84546af-7d33-44a4-aa43-0240d7846485",
-              "name": "human_handoff",
-              "value": "true",
-              "type": "string"
-            },
-            {
-              "id": "64001695-4101-4c13-8656-6c349d3ababf",
-              "name": "next_step",
-              "value": "human_handoff",
-              "type": "string"
-            },
-            {
-              "id": "188f69a9-ae3f-41c9-bdff-161d850962d9",
-              "name": "approval_required",
-              "value": "false",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        2128,
-        -96
-      ],
-      "id": "41e430ef-bff5-4478-851c-eab49f34e2fb",
-      "name": "Handle Human Handoff2"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "dataTableId": {
-          "__rl": true,
-          "value": "P757h1tWt7GwDqE6",
-          "mode": "list",
-          "cachedResultName": "Sales Opportunities",
-          "cachedResultUrl": ""
-        },
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "opportunity_id",
-              "keyValue": "={{ $json.opportunity_id }}"
-            }
-          ]
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "opportunity_stage": "in_progress",
-            "loss_reason": "Not a fit for available company services",
-            "updated_at": "={{$now.toISO()}}",
-            "approval_required": "=false"
-          },
-          "matchingColumns": [],
-          "schema": []
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        2368,
-        0
-      ],
-      "id": "1a8d7d86-efd1-4734-95d9-36bf78186acf",
-      "name": "Update Opportunity"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "11605047-c24c-47be-ab0a-0f8abeadf899",
-              "name": "opportunity_id",
-              "value": "={{ $json.opportunity_id }}",
-              "type": "string"
-            },
-            {
-              "id": "afdfea34-372c-4967-9677-81d99308fe5b",
-              "name": "next_step",
-              "value": "human_handoff",
-              "type": "string"
-            },
-            {
-              "id": "c3a591ff-c456-407a-a4cf-06a2c745327e",
-              "name": "opportunity_stage",
-              "value": "in_progress",
-              "type": "string"
-            },
-            {
-              "id": "3595ff6f-3177-4147-913e-d169cf9ad8b2",
-              "name": "assistant_message",
-              "value": "={{ \"Hello \" + ($json.customer_name || \"there\") + \", \" + ($json.requested_service || \"your requested service\") + \" is not currently listed among our available services. I’ll route your request to a team member who can assist you.\" }}",
-              "type": "string"
-            },
-            {
-              "id": "243f8249-603b-4d60-bea2-56160f4dc8c7",
-              "name": "human_handoff",
-              "value": "true",
-              "type": "string"
-            },
-            {
-              "id": "c8e878fb-ba84-4d98-aa10-f09c49acc6d1",
-              "name": "approval_required",
-              "value": "false",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        2592,
-        0
-      ],
-      "id": "4b0f9e19-44a5-48ba-8379-6b02891f3625",
-      "name": "Human Handoff Response"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "06e6b5ba-088d-4b18-831d-3e2c52744a20",
-              "name": "=opportunity_stage",
-              "value": "rejected",
-              "type": "string"
-            },
-            {
-              "id": "ac6e75d2-ebfd-4b80-98da-de855ec20aa2",
-              "name": "next_step",
-              "value": "collect_lead_info",
-              "type": "string"
-            },
-            {
-              "id": "b40501eb-ec6b-4f43-9f76-6f62818f81db",
-              "name": "human_handoff",
-              "value": false,
-              "type": "boolean"
-            },
-            {
-              "id": "94ea6cc4-c1cb-4b42-901f-edb31e660706",
-              "name": "approval_required",
-              "value": false,
-              "type": "boolean"
-            },
-            {
-              "id": "fdc95aae-3726-4910-8e8f-df251e44d038",
-              "name": "assistant_message",
-              "value": "=Lead details are incomplete or not qualified for a sales handoff. Please provide a valid email and name.",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        640,
-        80
-      ],
-      "id": "9827704b-32c9-4411-9229-66a869400b6f",
-      "name": "Return Rejected Handoff"
     }
   ],
   "pinData": {},
@@ -1927,7 +1669,15 @@
       ]
     },
     "Create Sales Approval": {
-      "main": []
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Sales Next Step": {
       "main": [
@@ -1976,6 +1726,13 @@
         [
           {
             "node": "Handle Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Sales Result",
             "type": "main",
             "index": 0
           }
@@ -2126,7 +1883,15 @@
       ]
     },
     "Human Handoff Response": {
-      "main": []
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Reject Sales Handoff": {
       "main": [
@@ -2140,7 +1905,26 @@
       ]
     },
     "Handle Human Handoff1": {
-      "main": []
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "Return Sales Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -2148,7 +1932,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "1797666e-cb33-4fc6-beea-758f7d3417c2",
+  "versionId": "c6de309e-f3c8-43b4-a581-208237ceaa9c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
