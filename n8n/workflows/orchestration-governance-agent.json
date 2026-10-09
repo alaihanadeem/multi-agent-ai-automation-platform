@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first()?.json || {};\nconst bodyData = input.body || {};\n\nconst incomingAgent = bodyData.target_agent || input.target_agent;\nlet agentId = '';\nlet agentName = '';\nlet incomingIntent = '';\n\nif (typeof incomingAgent === 'object' && incomingAgent !== null) {\n  agentId = String(incomingAgent.id || '').toLowerCase().trim();\n  agentName = incomingAgent.name || '';\n  incomingIntent = String(incomingAgent.intent || '').toLowerCase().trim();\n} else if (typeof incomingAgent === 'string') {\n  agentId = incomingAgent.toLowerCase().trim();\n  agentName = incomingAgent;\n}\n\nlet targetAgent = agentName || input.selected_agent || bodyData.selected_agent || input.agent_name || 'Governance Agent';\nlet determinedIntent = incomingIntent || input.intent || bodyData.intent || agentId || 'governance_check';\nlet governanceRoute = input.governance_route || bodyData.governance_route || agentId || 'policy_check';\n\nconst companyId = input.company_id || bodyData.company_id || input.tenant_id || bodyData.tenant_id || 'COMP001';\nconst customerMsg = input.customer_message || bodyData.customer_message || input.user_query || bodyData.user_query || input.user_message || bodyData.user_message || input.message || bodyData.message || 'Web console governance validation request.';\n\nreturn [{\n  json: {\n    ...input,\n    ...bodyData,\n\n    company_id: companyId,\n    tenant_id: companyId,\n    session_id: input.session_id || bodyData.session_id || 'WEB-SESS-' + Math.random().toString(36).substring(7),\n    lead_id: input.lead_id || bodyData.lead_id || '',\n    opportunity_id: input.opportunity_id || bodyData.opportunity_id || '',\n\n    customer_name: input.customer_name || bodyData.customer_name || '',\n    email: input.email || bodyData.email || '',\n    phone: input.phone || bodyData.phone || '',\n\n    customer_message: customerMsg,\n    user_query: customerMsg,\n    \n    target_agent: incomingAgent || { id: agentId, name: agentName, intent: determinedIntent },\n    target_agent_id: agentId,\n    target_agent_name: agentName,\n    intent: determinedIntent,\n    requested_service: input.requested_service || bodyData.requested_service || agentName || '',\n    \n    appointment_date: input.appointment_date || bodyData.appointment_date || input.date || bodyData.date || input.preferred_date || bodyData.preferred_date || '',\n    appointment_time: input.appointment_time || bodyData.appointment_time || input.preferred_slot || bodyData.preferred_slot || input.time_slot || bodyData.time_slot || input.preferred_time || bodyData.preferred_time || '',\n    preferred_slot: input.preferred_slot || bodyData.preferred_slot || input.appointment_time || bodyData.appointment_time || '',\n\n    business_need: input.business_need || bodyData.business_need || '',\n    matched_solution: input.matched_solution || bodyData.matched_solution || '',\n    budget: input.budget || bodyData.budget || bodyData.estimated_budget || '',\n    scope: input.scope || bodyData.scope || '',\n    \n    next_step: input.next_step || bodyData.next_step || 'general_inquiry',\n    consent_to_contact: true,\n\n    selected_agent: targetAgent,\n    governance_route: governanceRoute,\n    is_valid_request: true,\n    is_valid_context: true,\n\n    governance_status: 'received',\n    routing_status: 'pending',\n    approval_required: false,\n    human_handoff: false,\n\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const input = $input.first()?.json || {};\nconst bodyData = input.body || {};\n\nconst incomingAgent = \n  bodyData.target_agent || \n  input.target_agent || \n  bodyData.target_agent_id || \n  input.target_agent_id || \n  bodyData.selected_agent || \n  input.selected_agent;\n\nlet agentId = '';\nlet agentName = '';\nlet incomingIntent = '';\n\nif (typeof incomingAgent === 'object' && incomingAgent !== null) {\n  agentId = String(incomingAgent.id || incomingAgent.target_agent_id || '').toLowerCase().trim();\n  agentName = incomingAgent.name || '';\n  incomingIntent = String(incomingAgent.intent || '').toLowerCase().trim();\n} else if (typeof incomingAgent === 'string') {\n  agentId = incomingAgent.toLowerCase().trim();\n  agentName = incomingAgent;\n}\n\nif (!agentId && (bodyData.target_agent_id || input.target_agent_id)) {\n  agentId = String(bodyData.target_agent_id || input.target_agent_id).toLowerCase().trim();\n}\n\nif (!agentName && agentId) {\n  if (agentId.includes('whatsapp')) agentName = 'WhatsApp Agent';\n  else if (agentId.includes('sales')) agentName = 'Sales Agent';\n  else if (agentId.includes('quote')) agentName = 'Quote Agent';\n  else if (agentId.includes('lead')) agentName = 'Lead Capture Agent';\n  else if (agentId.includes('support')) agentName = 'Support Agent';\n  else if (agentId.includes('appointment')) agentName = 'Appointment Agent';\n  else if (agentId.includes('followup') || agentId.includes('follow_up')) agentName = 'Follow-up Agent';\n  else if (agentId.includes('marketing')) agentName = 'Marketing Agent';\n  else if (agentId.includes('review') || agentId.includes('feedback')) agentName = 'Feedback';\n  else if (agentId.includes('analytics')) agentName = 'Analytics';\n}\n\nif (!incomingIntent && agentId) {\n  incomingIntent = agentId;\n}\n\nlet targetAgent = agentName || input.selected_agent || bodyData.selected_agent || input.agent_name || (agentId ? agentName : 'Governance Agent');\nlet determinedIntent = incomingIntent || input.intent || bodyData.intent || agentId || 'governance_check';\nlet governanceRoute = input.governance_route || bodyData.governance_route || agentId || 'policy_check';\n\nconst companyId = input.company_id || bodyData.company_id || input.tenant_id || bodyData.tenant_id || 'COMP001';\nconst customerMsg = input.customer_message || bodyData.customer_message || input.user_query || bodyData.user_query || input.user_message || bodyData.user_message || input.message || bodyData.message || 'Web console governance validation request.';\n\nconst userPhone = input.phone || bodyData.phone || input.phone_number || bodyData.phone_number || '';\nconst userRole = input.role || bodyData.role || input['x-user-role'] || bodyData['x-user-role'] || 'CISO / Security Director';\n\nreturn [{\n  json: {\n    ...input,\n    ...bodyData,\n\n    company_id: companyId,\n    tenant_id: companyId,\n    session_id: input.session_id || bodyData.session_id || 'WEB-SESS-' + Math.random().toString(36).substring(7),\n    lead_id: input.lead_id || bodyData.lead_id || '',\n    opportunity_id: input.opportunity_id || bodyData.opportunity_id || '',\n\n    customer_name: input.customer_name || bodyData.customer_name || '',\n    role: userRole,\n    user_role: userRole,\n    email: input.email || bodyData.email || '',\n    phone: userPhone,\n    phone_number: userPhone,\n\n    customer_message: customerMsg,\n    user_query: customerMsg,\n    message: customerMsg,\n    user_message: customerMsg,\n    \n    target_agent: incomingAgent || { id: agentId, name: targetAgent, intent: determinedIntent },\n    target_agent_id: agentId,\n    target_agent_name: targetAgent,\n    intent: determinedIntent,\n    requested_service: input.requested_service || bodyData.requested_service || targetAgent || '',\n    \n    appointment_date: input.appointment_date || bodyData.appointment_date || input.date || bodyData.date || input.preferred_date || bodyData.preferred_date || '',\n    appointment_time: input.appointment_time || bodyData.appointment_time || input.preferred_slot || bodyData.preferred_slot || input.time_slot || bodyData.time_slot || input.preferred_time || bodyData.preferred_time || '',\n    preferred_slot: input.preferred_slot || bodyData.preferred_slot || input.appointment_time || bodyData.appointment_time || '',\n\n    business_need: input.business_need || bodyData.business_need || '',\n    matched_solution: input.matched_solution || bodyData.matched_solution || '',\n    budget: input.budget || bodyData.budget || bodyData.estimated_budget || '',\n    scope: input.scope || bodyData.scope || '',\n    \n    next_step: input.next_step || bodyData.next_step || 'general_inquiry',\n    consent_to_contact: true,\n\n    selected_agent: targetAgent,\n    governance_route: governanceRoute,\n    is_valid_request: true,\n    is_valid_context: true,\n\n    governance_status: 'received',\n    routing_status: 'pending',\n    approval_required: false,\n    human_handoff: false,\n\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -29,7 +29,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\n\nconst companyValid = String(input.company_id || input.tenant_id || '').trim() !== '';\nconst sessionValid = String(input.session_id || '').trim() !== '';\nconst messageValid = String(input.customer_message || input.user_query || '').trim() !== '';\n\nconst intent = String(input.intent || '').trim() || 'inquiry';\nconst requestedService = String(input.requested_service || '').trim() || 'General Security Assessment';\nconst nextStep = String(input.next_step || '').trim() || 'general_inquiry';\n\nconst validIntent = intent !== '';\nconst validNextStep = nextStep !== '';\n\nconst contextValid =\n  companyValid &&\n  sessionValid &&\n  messageValid &&\n  validIntent &&\n  validNextStep;\n\nreturn [{\n  json: {\n    ...input,\n\n    company_valid: companyValid,\n    session_valid: sessionValid,\n    message_valid: messageValid,\n    intent_valid: validIntent,\n    next_step_valid: validNextStep,\n    context_valid: contextValid,\n\n    intent: intent,\n    requested_service: requestedService,\n    next_step: nextStep,\n    consent_to_contact: input.consent_to_contact !== false,\n\n    governance_status: contextValid\n      ? 'context_validated'\n      : 'context_invalid',\n\n    updated_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "\nconst input = $input.first().json;\n\nconst message = String(input.customer_message || input.user_query || input.message || '').trim();\nconst companyValid = String(input.company_id || input.tenant_id || '').trim() !== '';\nconst sessionValid = String(input.session_id || '').trim() !== '';\nconst messageValid = message !== '';\n\nconst promptInjectionPatterns = [\n  /ignore\\s+(all\\s+)?previous\\s+instructions/i,\n  /ignore\\s+(all\\s+)?prior\\s+instructions/i,\n  /system\\s+prompt/i,\n  /developer\\s+(message|instructions)/i,\n  /reveal\\s+(your\\s+)?(system\\s+)?prompt/i,\n  /jailbreak/i,\n  /do\\s+not\\s+follow\\s+(the\\s+)?previous/i,\n  /DAN\\s+mode/i\n];\n\nconst secretPatterns = [\n  /-----BEGIN\\s+(RSA|OPENSSH|EC|DSA)?PRIVATE\\s+KEY-----/i,\n  /\\bAKIA[0-9A-Z]{16}\\b/i,\n  /\\bsk-[A-Za-z0-9]{20,}\\b/i,\n  /\\b(password|passwd|pwd)\\s*[:=]\\s*\\S+/i,\n  /\\b(postgresql|postgres|mysql|mongodb|redis):\\/\\/\\S+/i\n];\n\nconst promptInjectionDetected = promptInjectionPatterns.some(pattern => pattern.test(message));\nconst secretDetected = secretPatterns.some(pattern => pattern.test(message));\nconst isBlocked = promptInjectionDetected || secretDetected;\n\nconst intent = String(input.intent || '').trim() || 'inquiry';\nconst requestedService = String(input.requested_service || '').trim() || 'General Security Assessment';\nconst nextStep = String(input.next_step || '').trim() || 'general_inquiry';\n\nconst contextValid = companyValid && sessionValid && messageValid && !isBlocked;\n\nreturn [{\n  json: {\n    ...input,\n    company_valid: companyValid,\n    session_valid: sessionValid,\n    message_valid: messageValid,\n    intent_valid: true,\n    next_step_valid: true,\n    context_valid: contextValid,\n    security_blocked: isBlocked,\n    security_reason: promptInjectionDetected ? 'Prompt injection attempt detected' : (secretDetected ? 'Unmasked secret detected' : ''),\n    intent: intent,\n    requested_service: requestedService,\n    next_step: nextStep,\n    consent_to_contact: input.consent_to_contact !== false,\n    governance_status: isBlocked ? 'security_blocked' : (contextValid ? 'context_validated' : 'context_invalid'),\n    updated_at: new Date().toISOString()\n  }\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -76,7 +76,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first()?.json || {};\n\nconst targetAgentObj = input.target_agent || {};\nconst userObj = input.user || {};\n\nconst targetId = String(\n  input.target_agent_id || \n  targetAgentObj.id || \n  targetAgentObj.target_agent_id || \n  ''\n).toLowerCase().trim();\n\nconst intent = String(\n  input.intent || \n  targetAgentObj.intent || \n  input.user_query || \n  input.customer_message || \n  ''\n).toLowerCase().trim();\n\nconst selectedAgent = String(\n  input.selected_agent || \n  targetAgentObj.name || \n  ''\n).toLowerCase().trim();\n\nconst rawRoute = String(input.governance_route || '').toLowerCase().trim();\n\nlet route = 'general_ai_agent';\nlet targetAgent = 'General AI Agent';\n\nif (targetId === 'quote' || intent.includes('quote') || selectedAgent.includes('quote') || intent.includes('pricing') || intent.includes('price')) {\n  route = 'quote_agent';\n  targetAgent = 'Quote Agent';\n} else if (targetId === 'appointment' || intent.includes('appointment') || intent.includes('booking') || intent.includes('schedule') || selectedAgent.includes('appointment')) {\n  route = 'appointment_agent';\n  targetAgent = 'Appointment Agent';\n} else if (targetId === 'sales' || intent.includes('sales') || selectedAgent.includes('sales')) {\n  route = 'sales_agent';\n  targetAgent = 'Sales Agent';\n} else if (targetId === 'followup' || intent.includes('followup') || selectedAgent.includes('followup') || intent.includes('follow_up')) {\n  route = 'followup_agent';\n  targetAgent = 'Follow-up Agent';\n} else if (targetId === 'marketing' || intent.includes('marketing') || selectedAgent.includes('marketing')) {\n  route = 'marketing_agent';\n  targetAgent = 'Marketing Agent';\n} else if (targetId === 'lead' || intent.includes('lead') || selectedAgent.includes('lead')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'support' || intent.includes('support') || intent.includes('help') || selectedAgent.includes('support')) {\n  route = 'support_agent';\n  targetAgent = 'Support Agent';\n} else if (targetId === 'review' || intent.includes('review') || intent.includes('feedback') || selectedAgent.includes('feedback')) {\n  route = 'feedback_agent';\n  targetAgent = 'Feedback';\n} else if (targetId === 'whatsapp' || intent.includes('whatsapp') || selectedAgent.includes('whatsapp') || intent.includes('critical') || intent.includes('alert')) {\n  route = 'whatsapp_agent';\n  targetAgent = 'WhatsApp Agent';\n} else if (targetId === 'analytics' || intent.includes('analytics') || selectedAgent.includes('analytics')) {\n  route = 'analytics_agent';\n  targetAgent = 'Analytics';\n} else if (targetId === 'intake' || targetId === 'dna' || intent.includes('dna') || intent.includes('intake') || intent.includes('steward')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'governance' || targetId === 'orchestration' || intent.includes('governance')) {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n} else {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n}\n\nreturn [{\n  json: {\n    ...input,\n    governance_route: route,\n    selected_agent: targetAgent,\n    human_handoff: false\n  }\n}];"
+        "jsCode": "const input = $input.first()?.json || {};\n\nconst targetAgentObj = input.target_agent || {};\nconst userObj = input.user || {};\n\nconst targetId = String(\n  input.target_agent_id || \n  targetAgentObj.id || \n  targetAgentObj.target_agent_id || \n  ''\n).toLowerCase().trim();\n\nconst intent = String(\n  input.intent || \n  targetAgentObj.intent || \n  ''\n).toLowerCase().trim();\n\nconst selectedAgent = String(\n  input.selected_agent || \n  targetAgentObj.name || \n  ''\n).toLowerCase().trim();\n\nconst customerMsg = String(\n  input.customer_message || \n  input.user_query || \n  input.message || \n  input.user_message || \n  ''\n).toLowerCase().trim();\n\nlet route = 'general_ai_agent';\nlet targetAgent = 'General AI Agent';\n\nif (targetId === 'quote' || intent.includes('quote') || selectedAgent.includes('quote') || customerMsg.includes('pricing') || customerMsg.includes('quote')) {\n  route = 'quote_agent';\n  targetAgent = 'Quote Agent';\n} else if (targetId === 'appointment' || intent.includes('appointment') || intent.includes('booking') || intent.includes('schedule') || selectedAgent.includes('appointment')) {\n  route = 'appointment_agent';\n  targetAgent = 'Appointment Agent';\n} else if (targetId === 'sales' || intent.includes('sales') || selectedAgent.includes('sales')) {\n  route = 'sales_agent';\n  targetAgent = 'Sales Agent';\n} else if (targetId === 'followup' || intent.includes('followup') || selectedAgent.includes('followup') || intent.includes('follow_up')) {\n  route = 'followup_agent';\n  targetAgent = 'Follow-up Agent';\n} else if (targetId === 'marketing' || intent.includes('marketing') || selectedAgent.includes('marketing')) {\n  route = 'marketing_agent';\n  targetAgent = 'Marketing Agent';\n} else if (targetId === 'lead' || intent.includes('lead') || selectedAgent.includes('lead')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'support' || intent.includes('support') || selectedAgent.includes('support')) {\n  route = 'support_agent';\n  targetAgent = 'Support Agent';\n} else if (targetId === 'review' || intent.includes('review') || intent.includes('feedback') || selectedAgent.includes('feedback')) {\n  route = 'feedback_agent';\n  targetAgent = 'Feedback';\n} else if (\n  targetId === 'whatsapp' || \n  targetId.includes('whatsapp') || \n  intent.includes('whatsapp') || \n  selectedAgent.includes('whatsapp') || \n  customerMsg.includes('whatsapp') || \n  intent.includes('critical') || \n  customerMsg.includes('critical alert') ||\n  (customerMsg.includes('security alert') && customerMsg.includes('enable')) ||\n  (customerMsg.includes('alert') && customerMsg.includes('whatsapp'))\n) {\n  route = 'whatsapp_agent';\n  targetAgent = 'WhatsApp Agent';\n} else if (targetId === 'analytics' || intent.includes('analytics') || selectedAgent.includes('analytics')) {\n  route = 'analytics_agent';\n  targetAgent = 'Analytics';\n} else if (targetId === 'intake' || targetId === 'dna' || intent.includes('dna') || intent.includes('intake') || intent.includes('steward')) {\n  route = 'lead_capture_agent';\n  targetAgent = 'Lead Capture Agent';\n} else if (targetId === 'governance' || targetId === 'orchestration' || intent.includes('governance')) {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n} else {\n  route = 'general_ai_agent';\n  targetAgent = 'General AI Agent';\n}\n\nreturn [{  \n  json: {  \n    ...input,  \n    governance_route: route,  \n    selected_agent: targetAgent,\n    human_handoff: false\n  }  \n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1056,9 +1056,7 @@
             "region": "={{ $json.region || '' }}",
             "intent": "={{ $json.intent }}",
             "qualification_status": "={{ $json.qualification_status || $('When Executed by Another Workflow').first().json.qualification_status || 'unknown' }}",
-            "lead_summary": "={{ $json.lead_summary || (($json.name || $json.customer_name) + ' wants a quote for ' + $json.requested_service + ' (' + ($json.region || 'region not given') + ').') }}",
-            "criteria": "Prepare a quote for the requested service using only approved company pricing. Do not promise discounts or final prices without approval. Ask for any missing details (scope, size, timeline).",
-            "chatInput": "=Customer asked: \"{{ $json.customer_message }}\". Prepare a quote for {{ $json.requested_service }}."
+            "chatInput": "={{ $json.body.customer_message }}"
           },
           "matchingColumns": [],
           "schema": []
@@ -1189,7 +1187,18 @@
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
-          "value": {},
+          "value": {
+            "company_id": "={{ $json.company_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "message": "={{ $json.customer_message || $json.user_query || $json.message || ($json.body && $json.body.message) || '' }}",
+            "user_message": "={{ $json.customer_message || $json.user_query || $json.message || ($json.body && $json.body.message) || '' }}",
+            "customer_message": "={{ $json.customer_message || $json.user_query || $json.message || ($json.body && $json.body.message) || '' }}",
+            "phone": "={{ $json.phone || ($json.body && $json.body.phone) || '' }}",
+            "phone_number": "={{ $json.phone || $json.phone_number || ($json.body && $json.body.phone) || '' }}",
+            "intent": "={{ $json.intent || 'whatsapp' }}",
+            "selected_agent": "={{ $json.selected_agent || 'WhatsApp Agent' }}",
+            "chatInput": "={{ $json.customer_message || $json.user_query || $json.message || '' }}"
+          },
           "matchingColumns": [],
           "schema": [],
           "attemptToConvertTypes": false,
@@ -1251,15 +1260,17 @@
           "mappingMode": "defineBelow",
           "value": {
             "company_id": "={{ $json.company_id }}",
-            "session_id": "={{ $('When Executed by Another Workflow').item.json.session_id }}",
-            "intent": "={{ $('When Executed by Another Workflow').item.json.intent }}",
-            "requested_service": "={{ $('When Executed by Another Workflow').item.json.requested_service }}",
+            "session_id": "={{ $json.session_id }}",
+            "intent": "={{ $json.intent }}",
+            "requested_service": "={{ $json.requested_service }}",
             "governance_route": "={{ $json.governance_route }}",
             "selected_agent": "={{ $json.selected_agent }}",
-            "customer_message": "={{ $('When Executed by Another Workflow').item.json.customer_message }}"
+            "customer_message": "={{ $json.customer_message }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
         },
         "options": {
           "waitForSubWorkflow": true
@@ -1277,52 +1288,6 @@
     },
     {
       "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "zYI5fwO3AM35UTpp",
-          "mode": "list",
-          "cachedResultUrl": "",
-          "cachedResultName": "Lead Capture subworkflow"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "company_id": "={{ $json.company_id }}",
-            "session_id": "={{ $json.session_id }}",
-            "company_name": "={{ $json.customer_name }}",
-            "email": "={{ $json.email }}",
-            "phone": "={{ $json.phone }}",
-            "requested_service": "={{ $json.requested_service }}",
-            "user_message": "={{ $json.customer_message || $json.user_message }}",
-            "industry": "={{ $json.industry || \"\" }}",
-            "services": "={{ $json.requested_service }}",
-            "pricing": "={{ $json.industry || \"\" }}",
-            "policies": "={{ $json.policies || \"\" }}",
-            "workflows": "={{ $json.workflows }}",
-            "permissions": "={{ $json.permissions || \"\" }}",
-            "lead_id": "={{ $json.lead_id }}",
-            "customer_name": "={{ $json.customer_name }}",
-            "assistant_message": "={{ $json.assistant_message }}"
-          },
-          "matchingColumns": [],
-          "schema": []
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        3408,
-        -160
-      ],
-      "id": "7f7260f2-c115-4fbb-ba88-6b5d6e907070",
-      "name": "Call 'Lead Capture subworkflow'",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
         "jsCode": "const item = $input.first()?.json || {};\nconst originalInput = $('Accept Governance Request').first().json || {};\n\nreturn [{  \n  json: {  \n    ...originalInput, \n    ...item,          \n    context_valid: item.company_id ? true : false  \n  }  \n}];"
       },
       "type": "n8n-nodes-base.code",
@@ -1333,6 +1298,53 @@
       ],
       "id": "d8540c08-e234-4c68-9137-300450321fcb",
       "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "zYI5fwO3AM35UTpp",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "Lead Capture subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{ $json.company_id || 'COMP001' }}",
+            "company_name": "={{ $json.company_name || 'Test Company' }}",
+            "industry": "={{ $json.industry || 'Cybersecurity' }}",
+            "services": "={{ $json.services || '' }}",
+            "pricing": "={{ $json.pricing || '' }}",
+            "policies": "={{ $json.policies || '' }}",
+            "workflows": "={{ $json.workflows || '' }}",
+            "permissions": "={{ $json.permissions || '' }}",
+            "session_id": "={{ $json.session_id || 'sess_' + Date.now() }}",
+            "user_message": "={{ $json.customer_message || $json.user_query || $json.user_message || $json.message || ($json.body && ($json.body.user_query || $json.body.customer_message || $json.body.message)) || '' }}",
+            "email": "={{ $json.email || ($json.body && $json.body.email) || '' }}",
+            "phone": "={{ $json.phone || ($json.body && $json.body.phone) || '' }}",
+            "customer_name": "={{ $json.customer_name || $json.name || ($json.body && ($json.body.customer_name || $json.body.name)) || '' }}",
+            "lead_id": "={{ $json.lead_id || '' }}",
+            "requested_service": "={{ $json.requested_service || ($json.body && $json.body.requested_service) || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3392,
+        -160
+      ],
+      "id": "5d54287c-a4a7-42c7-b6c9-15bdc5c842e9",
+      "name": "Call 'Lead Capture subworkflow'",
+      "alwaysOutputData": true
     }
   ],
   "pinData": {},
@@ -1831,7 +1843,7 @@
       "main": [
         [
           {
-            "node": "Agent Execution Result",
+            "node": "Agent ExecutionResult",
             "type": "main",
             "index": 0
           }
@@ -1860,22 +1872,22 @@
         ]
       ]
     },
-    "Call 'Lead Capture subworkflow'": {
+    "Code in JavaScript": {
       "main": [
         [
           {
-            "node": "Agent Execution Result",
+            "node": "Company DNA Found?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Call 'Lead Capture subworkflow'": {
       "main": [
         [
           {
-            "node": "Company DNA Found?",
+            "node": "Agent Execution Result",
             "type": "main",
             "index": 0
           }
@@ -1888,7 +1900,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "4a151973-0428-49c3-8347-f9d9c85c0609",
+  "versionId": "96cf2e6c-bd75-4ab0-a176-8b5a24fe0870",
   "meta": {
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
   },
