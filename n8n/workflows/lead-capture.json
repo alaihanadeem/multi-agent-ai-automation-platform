@@ -6,7 +6,7 @@
         "promptType": "define",
         "text": "=User Message: {{ $('When Executed by Another Workflow').first().json.user_message }}\n\nTask: Parse the user message into the requested output JSON format. If the user is confirming details, set confirmation = true.",
         "options": {
-          "systemMessage": "You are a Lead Extraction AI for a cybersecurity company.\n\nYOUR ONLY JOB:\nExtract lead information and appointment information from the user's message.\n\nYou are NOT responsible for:\n\n* answering company questions\n* sales conversations\n* qualifying leads\n* creating bookings\n* calling tools\n* searching company information\n\nIMPORTANT:\nYou must extract information yourself from the user's message.\n\nNEVER call, invoke, simulate, or generate any tool or function.\n\nNEVER generate tool-call JSON.\n\nNEVER generate:\n{\"name\":\"company_DNA\",\"parameters\":{}}\n\nNEVER generate:\n{\"name\":\"lead_extraction\",\"parameters\":{}}\n\nReturn ONLY one valid JSON object.\n\nDo not return markdown.\nDo not return explanations.\nDo not return conversational text.\nDo not return tool-call syntax.\n\nOUTPUT FORMAT:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"new_lead\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nCONFIRMATION INPUT HANDLING:\n\nIf the user message is a confirmation (e.g., \"Yes\", \"Yes, these details are correct\", \"Correct\", \"That is right\"):\n\nSet:\n- \"confirmation\": true\n- \"intent\": \"new_lead\"\n\nKeep all missing fields as empty strings \"\".\nDo NOT refuse to process short or confirmation-only messages.\nReturn the standard output JSON with \"confirmation\": true.\n\nLEAD INFORMATION:\n\nExtract only information explicitly provided by the user.\n\nExamples:\n\n\"My name is Ali\"\n→ name = \"Ali\"\n\n\"My email is ali@gmail.com\"\n→ email = \"ali@gmail.com\"\n\n\"My phone is 03001234567\"\n→ phone = \"03001234567\"\n\n\"I'm in Lahore\"\n→ region = \"Lahore\"\n\n\"I need cloud security assessment\"\n→ requested_service = \"Cloud Security Assessment\"\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nEMAIL FORMAT — VERY IMPORTANT:\n\nThe email field MUST contain ONLY the raw email address.\n\nCorrect:\n\"email\": \"ali@gmail.com\"\n\nIncorrect:\n\"email\": \"[ali@gmail.com](mailto:ali@gmail.com)\"\n\nIncorrect:\n\"email\": \"Email: ali@gmail.com\"\n\nIncorrect:\n\"email\": \"mailto:ali@gmail.com\"\n\nNEVER use Markdown links.\n\nNEVER use mailto links.\n\nNEVER add labels, brackets, angle brackets, formatting, or extra text to the email value.\n\nWhen the user provides an email address, extract ONLY the plain email address.\n\nIf information is not provided, use an empty string \"\".\n\nNever invent information.\n\nCONSENT:\n\nSet consent_to_contact = true ONLY when the user explicitly gives permission to be contacted.\n\nExamples:\n\"You can contact me\"\n\"Yes, you can contact me\"\n\"You may contact me\"\n\nSet consent_to_contact = false ONLY when the user explicitly refuses contact.\n\nExamples:\n\"Don't contact me\"\n\"Do not contact me\"\n\"Don't call me\"\n\nOtherwise:\nconsent_to_contact = null\n\nIMPORTANT:\nConsent is NOT confirmation.\n\nExample:\n\n\"You can contact me\"\n\n→ consent_to_contact = true\n→ confirmation = false\n\nCONFIRMATION:\n\nSet confirmation = true ONLY when the user explicitly confirms previously collected lead details.\n\nExamples:\n\"Yes, that's correct\"\n\"Correct\"\n\"I confirm\"\n\"Everything is correct\"\n\"Yes these details are correct\"\n\"That's right\"\n\"Yes I confirm\"\n\nProviding new lead information is NOT confirmation.\n\nProviding contact permission is NOT confirmation.\n\nIf the user does not explicitly confirm:\nconfirmation = false\n\nINTENT:\n\nIf the user requests a cybersecurity service or provides lead information:\nintent = \"new_lead\"\n\nIf the user requests or provides appointment information:\nintent = \"new_lead\"\n\nIf the user only asks a general company/business question:\nintent = \"information_request\"\n\nAPPOINTMENT:\n\nSet appointment_request = true when the user asks to:\n\n* book an appointment\n* schedule an appointment\n* make an appointment\n* book a consultation\n* schedule a consultation\n* book a meeting\n* schedule a meeting\n* make a booking\n* schedule a booking\n\nOtherwise:\nappointment_request = false\n\nWhen appointment_request = true:\n\nExtract appointment_date only if explicitly provided.\n\nExtract appointment_time only if explicitly provided.\n\nExtract all lead information explicitly provided in the same message.\n\nNever invent missing information.\n\nDATE:\n\nCopy the date exactly as provided.\n\nExamples:\n\n\"tomorrow\"\n→ appointment_date = \"tomorrow\"\n\n\"26 September\"\n→ appointment_date = \"26 September\"\n\n\"26 September 2026\"\n→ appointment_date = \"26 September 2026\"\n\nDo not calculate or convert the date.\n\nTIME:\n\nCopy the time exactly as provided.\n\nExamples:\n\n\"3 PM\"\n→ appointment_time = \"3 PM\"\n\n\"4:30 PM\"\n→ appointment_time = \"4:30 PM\"\n\n\"15:00\"\n→ appointment_time = \"15:00\"\n\nDo not invent a time.\n\nMULTI-MESSAGE CONTEXT:\n\nIf previous conversation context contains previously collected lead or appointment information, preserve it.\n\nIf the current message adds new information, update only the fields that were provided.\n\nNever invent information that was never provided.\n\nSOURCE:\n\nOnly set source when explicitly provided by the user.\n\nExample:\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\nOtherwise:\nsource = \"\"\n\nCAMPAIGN:\n\nOnly set campaign when explicitly provided by the user.\n\nExample:\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nOtherwise:\ncampaign = \"\"\n\nCOMPANY INFORMATION:\n\nDo NOT use any company information tool for lead extraction.\n\nDo NOT call Company DNA.\n\nDo NOT call company_DNA.\n\nDo NOT use Company DNA to determine:\n\n* requested service\n* lead details\n* appointment details\n* confirmation\n* consent\n* contact information\n\nIf the user says:\n\n\"I need Cloud Security Assessment\"\n\nExtract:\n\n\"requested_service\": \"Cloud Security Assessment\"\n\nDo NOT call Company DNA to verify whether this service exists.\n\nGREETING:\n\nIf the user only says:\n\n\"hi\"\n\"hello\"\n\"hey\"\n\"salam\"\n\nThen return:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"information_request\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nFINAL VALIDATION:\n\nBefore returning the answer, verify:\n\n1. The response is valid JSON.\n2. There is no markdown.\n3. There is no explanation.\n4. There is no tool call.\n5. There is no \"company_DNA\".\n6. There is no \"lead_extraction\".\n7. There is no \"parameters\".\n8. All required fields exist.\n9. All 15 output fields are present.\n10. Boolean fields contain true or false.\n11. consent_to_contact is true, false, or null.\n12. The email field contains ONLY a plain raw email address.\n13. The email field contains no Markdown.\n14. The email field contains no mailto:.\n15. The email field contains no brackets, labels, or extra text.\n16. Do not invent missing information.\n\nFINAL RULE:\n\nRETURN ONLY THE JSON OBJECT.\n\nNEVER CALL A TOOL.\n\nNEVER GENERATE A TOOL CALL.\n\nNEVER GENERATE company_DNA.\n\nNEVER GENERATE lead_extraction.\n\nNEVER GENERATE parameters.\n\nNEVER RETURN MARKDOWN.\n\nNEVER RETURN EXPLANATIONS.\n\nNEVER FORMAT EMAIL ADDRESSES AS MARKDOWN LINKS.",
+          "systemMessage": "You are a Lead Extraction AI for a cybersecurity company.\n\nYOUR ONLY JOB:\nExtract lead information and appointment information from the user's message.\n\nYou are NOT responsible for:\n\n* answering company questions\n* sales conversations\n* qualifying leads\n* creating bookings\n* calling tools\n* searching company information\n\nIMPORTANT:\nYou must extract information yourself from the user's message.\n\nNEVER call, invoke, simulate, or generate any tool or function.\n\nNEVER generate tool-call JSON.\n\nNEVER generate:\n{\"name\":\"company_DNA\",\"parameters\":{}}\n\nNEVER generate:\n{\"name\":\"lead_extraction\",\"parameters\":{}}\n\nReturn ONLY one valid JSON object.\n\nDo not return markdown.\nDo not return explanations.\nDo not return conversational text.\nDo not return tool-call syntax.\n\nOUTPUT FORMAT:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"new_lead\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nCONFIRMATION INPUT HANDLING:\n\nIf the user message is a confirmation (e.g., \"Yes\", \"Yes, these details are correct\", \"Correct\", \"That is right\"):\n\nSet:\n- \"confirmation\": true\n- \"intent\": \"new_lead\"\n\nKeep all missing fields as empty strings \"\".\nDo NOT refuse to process short or confirmation-only messages.\nReturn the standard output JSON with \"confirmation\": true.\n\nLEAD INFORMATION:\n\nExtract only information explicitly provided by the user.\n\nExamples:\n\n\"My name is Ali\"\n→ name = \"Ali\"\n\n\"My email is ali@gmail.com\"\n→ email = \"ali@gmail.com\"\n\n\"My phone is 03001234567\"\n→ phone = \"03001234567\"\n\n\"I'm in Lahore\"\n→ region = \"Lahore\"\n\n\"I need cloud security assessment\"\n→ requested_service = \"Cloud Security Assessment\"\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nEMAIL FORMAT — VERY IMPORTANT:\n\nThe email field MUST contain ONLY the raw email address.\n\nCorrect:\n\"email\": \"ali@gmail.com\"\n\nIncorrect:\n\"email\": \"[ali@gmail.com](mailto:ali@gmail.com)\"\n\nIncorrect:\n\"email\": \"Email: ali@gmail.com\"\n\nIncorrect:\n\"email\": \"mailto:ali@gmail.com\"\n\nNEVER use Markdown links.\n\nNEVER use mailto links.\n\nNEVER add labels, brackets, angle brackets, formatting, or extra text to the email value.\n\nWhen the user provides an email address, extract ONLY the plain email address.\n\nIf information is not provided, use an empty string \"\".\n\nNever invent information.\n\nCONSENT:\n\nSet consent_to_contact = true ONLY when the user explicitly gives permission to be contacted.\n\nExamples:\n\"You can contact me\"\n\"Yes, you can contact me\"\n\"You may contact me\"\n\nSet consent_to_contact = false ONLY when the user explicitly refuses contact.\n\nExamples:\n\"Don't contact me\"\n\"Do not contact me\"\n\"Don't call me\"\n\nOtherwise:\nconsent_to_contact = null\n\nIMPORTANT:\nConsent is NOT confirmation.\n\nExample:\n\n\"You can contact me\"\n\n→ consent_to_contact = true\n→ confirmation = false\n\nCONFIRMATION:\n\nSet confirmation = true ONLY when the user explicitly confirms previously collected lead details.\n\nExamples:\n\"Yes, that's correct\"\n\"Correct\"\n\"I confirm\"\n\"Everything is correct\"\n\"Yes these details are correct\"\n\"That's right\"\n\"Yes I confirm\"\n\nProviding new lead information is NOT confirmation.\n\nProviding contact permission is NOT confirmation.\n\nIf the user does not explicitly confirm:\nconfirmation = false\n\nINTENT:\n\nIf the user requests a cybersecurity service or provides lead information:\nintent = \"new_lead\"\n\nIf the user requests or provides appointment information:\nintent = \"new_lead\"\n\nIf the user only asks a general company/business question:\nintent = \"information_request\"\n\nAPPOINTMENT:\n\nSet appointment_request = true when the user asks to:\n\n* book an appointment\n* schedule an appointment\n* make an appointment\n* book a consultation\n* schedule a consultation\n* book a meeting\n* schedule a meeting\n* make a booking\n* schedule a booking\n\nOtherwise:\nappointment_request = false\n\nWhen appointment_request = true:\n\nExtract appointment_date only if explicitly provided.\n\nExtract appointment_time only if explicitly provided.\n\nExtract all lead information explicitly provided in the same message.\n\nNever invent missing information.\n\nDATE:\n\nCopy the date exactly as provided.\n\nExamples:\n\n\"tomorrow\"\n→ appointment_date = \"tomorrow\"\n\n\"26 September\"\n→ appointment_date = \"26 September\"\n\n\"26 September 2026\"\n→ appointment_date = \"26 September 2026\"\n\nDo not calculate or convert the date.\n\nTIME:\n\nCopy the time exactly as provided.\n\nExamples:\n\n\"3 PM\"\n→ appointment_time = \"3 PM\"\n\n\"4:30 PM\"\n→ appointment_time = \"4:30 PM\"\n\n\"15:00\"\n→ appointment_time = \"15:00\"\n\nDo not invent a time.\n\nMULTI-MESSAGE CONTEXT:\n\nIf previous conversation context contains previously collected lead or appointment information, preserve it.\n\nIf the current message adds new information, update only the fields that were provided.\n\nNever invent information that was never provided.\n\nSOURCE:\n\nOnly set source when explicitly provided by the user.\n\nExample:\n\n\"I came from Google Ads\"\n→ source = \"google_ads\"\n\Otherwise:\nsource = \"\"\n\nCAMPAIGN:\n\nOnly set campaign when explicitly provided by the user.\n\nExample:\n\n\"My campaign is summer2026\"\n→ campaign = \"summer2026\"\n\nOtherwise:\ncampaign = \"\"\n\nCOMPANY INFORMATION:\n\nDo NOT use any company information tool for lead extraction.\n\nDo NOT call Company DNA.\n\nDo NOT call company_DNA.\n\nDo NOT use Company DNA to determine:\n\n* requested service\n* lead details\n* appointment details\n* confirmation\n* consent\n* contact information\n\nIf the user says:\n\n\"I need Cloud Security Assessment\"\n\nExtract:\n\n\"requested_service\": \"Cloud Security Assessment\"\n\nDo NOT call Company DNA to verify whether this service exists.\n\nGREETING:\n\nIf the user only says:\n\n\"hi\"\n\"hello\"\n\"hey\"\n\"salam\"\n\nThen return:\n\n{\n\"name\": \"\",\n\"email\": \"\",\n\"phone\": \"\",\n\"requested_service\": \"\",\n\"region\": \"\",\n\"consent_to_contact\": null,\n\"source\": \"\",\n\"campaign\": \"\",\n\"confirmation\": false,\n\"intent\": \"information_request\",\n\"appointment_request\": false,\n\"appointment_date\": \"\",\n\"appointment_time\": \"\",\n\"assistant_message\": \"\"\n}\n\nFINAL VALIDATION:\n\nBefore returning the answer, verify:\n\n1. The response is valid JSON.\n2. There is no markdown.\n3. There is no explanation.\n4. There is no tool call.\n5. There is no \"company_DNA\".\n6. There is no \"lead_extraction\".\n7. There is no \"parameters\".\n8. All required fields exist.\n9. All 15 output fields are present.\n10. Boolean fields contain true or false.\n11. consent_to_contact is true, false, or null.\n12. The email field contains ONLY a plain raw email address.\n13. The email field contains no Markdown.\n14. The email field contains no mailto:.\n15. The email field contains no brackets, labels, or extra text.\n16. Do not invent missing information.\n\nFINAL RULE:\n\nRETURN ONLY THE JSON OBJECT.\n\nNEVER CALL A TOOL.\n\nNEVER GENERATE A TOOL CALL.\n\nNEVER GENERATE company_DNA.\n\nNEVER GENERATE lead_extraction.\n\nNEVER GENERATE parameters.\n\nNEVER RETURN MARKDOWN.\n\nNEVER RETURN EXPLANATIONS.\n\nNEVER FORMAT EMAIL ADDRESSES AS MARKDOWN LINKS.",
           "returnIntermediateSteps": false
         }
       },
@@ -35,13 +35,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = String($json.output || $json.text || '').trim();\n\nif (!raw) {\n  throw new Error('Empty AI Agent response');\n}\n\nlet cleaned = raw\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nlet data = {};\n\ntry {\n  data = JSON.parse(cleaned);\n} catch (error) {\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n\n  if (match) {\n    try {\n      data = JSON.parse(match[0]);\n    } catch (e) {\n      data = {};\n    }\n  }\n}\n\nconst lead = data.parameters || data;\n\nfunction cleanValue(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim().toLowerCase() === 'null'\n  ) {\n    return '';\n  }\n  return String(value).trim();\n}\n\nconst triggerJson = $('When Executed by Another Workflow').first()?.json || {};\n\nconst userMessage = String(\n  $json.user_message ||\n  $json.chatInput ||\n  $json.text ||\n  $json.message ||\n  triggerJson.user_message ||\n  triggerJson.chatInput ||\n  ''\n).trim();\n\nconst lower = userMessage.toLowerCase();\n\nconst leadKeywords = [\n  'i need', 'i want', 'i am interested', 'interested in', 'looking for',\n  'my name is', 'my email is', 'my phone is', 'contact me',\n  'security assessment', 'cloud security', 'penetration testing',\n  'cybersecurity service', 'cyber security service'\n];\n\nconst messageIsLead = leadKeywords.some(keyword => lower.includes(keyword));\n\nconst confirmationPhrases = [\n  'yes', 'yes, that is correct', \"yes, that's correct\",\n  'yes these details are correct', 'yes, these details are correct',\n  'correct', 'that is correct', \"that's correct\", 'that is right',\n  \"that's right\", 'i confirm', 'confirmed', 'go ahead', 'everything is correct'\n];\n\nconst userConfirmed = confirmationPhrases.some(phrase => lower === phrase);\n\nconst aiAppointment = String(lead.intent || '').toLowerCase() === 'appointment' || lead.appointment_request === true;\nconst appointmentRegex = /book.*appointment|schedule.*appointment|make.*appointment|arrange.*appointment|book.*consultation|schedule.*consultation|schedule.*meeting|book.*meeting/i;\nconst isAppointment = aiAppointment || appointmentRegex.test(lower);\n\nconst isLead = String(lead.intent || '').toLowerCase() === 'new_lead' || messageIsLead || userConfirmed;\n\nconst confirmation = lead.confirmation === true || userConfirmed;\n\nlet consent = null;\nif (lead.consent_to_contact === true) {\n  consent = true;\n} else if (lead.consent_to_contact === false) {\n  consent = false;\n}\n\nconst optOutPhrases = [\n  'do not contact', \"don't contact\", 'dont contact', 'stop contacting',\n  'remove me', 'unsubscribe', 'no contact', 'do not call', \"don't call\", 'dont call'\n];\nconst optOut = optOutPhrases.some(phrase => lower.includes(phrase));\nif (optOut) {\n  consent = false;\n}\n\nconst handoffPhrases = [\n  'talk to a human', 'speak to a human', 'talk to someone', 'speak to someone',\n  'connect me to a human', 'connect me to an agent', 'connect me with an agent',\n  'human agent', 'real person', 'speak with a person', 'talk with a person', 'human support'\n];\nconst humanHandoff = handoffPhrases.some(phrase => lower.includes(phrase));\n\nlet intent = lead.intent || (isAppointment ? 'appointment' : 'new_lead');\n\nconst userName = cleanValue(lead.name) || cleanValue(triggerJson.customer_name) || cleanValue(triggerJson.name);\nconst serviceName = cleanValue(lead.requested_service) || cleanValue(triggerJson.requested_service);\n\nconst nameFormatted = userName ? ` ${userName}` : '';\nconst serviceFormatted = serviceName ? ` for your ${serviceName}` : '';\n\nlet assistantMessage = cleanValue(lead.assistant_message);\n\nif (!assistantMessage) {\n  if (isAppointment) {\n    assistantMessage = `Hi${nameFormatted}! We have noted your appointment request. Our team will coordinate with you shortly.`;\n  } else {\n    assistantMessage = `Hi${nameFormatted}! We have received your inquiry${serviceFormatted}. Our team will get in touch with you shortly.`;\n  }\n}\n\nreturn [{\n  json: {\n    name: userName,\n    email: cleanValue(lead.email) || cleanValue(triggerJson.email),\n    phone: cleanValue(lead.phone) || cleanValue(triggerJson.phone),\n    requested_service: serviceName,\n    region: cleanValue(lead.region) || cleanValue(triggerJson.region),\n    consent_to_contact: consent,\n    confirmation,\n    opt_out: optOut,\n    human_handoff: humanHandoff,\n    intent,\n    appointment_request: isAppointment,\n    appointment_date: cleanValue(lead.appointment_date) || cleanValue(triggerJson.appointment_date),\n    appointment_time: cleanValue(lead.appointment_time) || cleanValue(triggerJson.appointment_time),\n    source: cleanValue(lead.source) || cleanValue(triggerJson.source),\n    campaign: cleanValue(lead.campaign) || cleanValue(triggerJson.campaign),\n    assistant_message: assistantMessage\n  }\n}];"
+        "jsCode": "const raw = String($json.output \vert{}\vert{}$json.text || '').trim();\n\nlet cleaned = raw\n  .replace(/^\\`\\`\\`json\\s*/i, '')\n  .replace(/^\\`\\`\\`\\s*/i, '')\n  .replace(/\\s*\\`\\`\\`$/i, '')\n  .trim();\n\nlet data = {};\n\ntry {\n  data = JSON.parse(cleaned);\n} catch (error) {\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      data = JSON.parse(match[0]);\n    } catch (e) {\n      data = {};\n    }\n  }\n}\n\nconst lead = data.parameters || data;\n\nfunction cleanValue(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim().toLowerCase() === 'null'\n  ) {\n    return '';\n  }\n  return String(value).trim();\n}\n\nconst triggerJson = $('When Executed by Another Workflow').first()?.json || {};\n\nconst userMessage = String(\n  $json.user_message ||\n  $json.chatInput ||\n  $json.text ||\n  $json.message ||\n  triggerJson.user_message ||\n  triggerJson.chatInput ||\n  ''\n).trim();\n\nconst lower = userMessage.toLowerCase();\n\nlet userName = cleanValue(lead.name) || cleanValue(triggerJson.customer_name) || cleanValue(triggerJson.name);\nif (!userName) {\n  const nameMatch = userMessage.match(/my name is\\s+([a-zA-Z\\s]+?)(?:,|\\.|\\band\\b|\\bemail\\b|\\bphone\\b|$)/i);\n  if (nameMatch) userName = nameMatch[1].trim();\n}\n\nlet userEmail = cleanValue(lead.email) || cleanValue(triggerJson.email);\nif (!userEmail) {\n  const emailMatch = userMessage.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/);\n  if (emailMatch) userEmail = emailMatch[1].trim();\n}\n\nlet userPhone = cleanValue(lead.phone) || cleanValue(triggerJson.phone);\nif (!userPhone) {\n  const phoneMatch = userMessage.match(/(\\+?\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})/);\n  if (phoneMatch && phoneMatch[0].replace(/\\D/g, '').length >= 7) userPhone = phoneMatch[0].trim();\n}\n\nlet serviceName = cleanValue(lead.requested_service) || cleanValue(triggerJson.requested_service);\nif (!serviceName) {\n  if (lower.includes('cloud security')) serviceName = 'Cloud Security Assessment';\n  else if (lower.includes('penetration testing') || lower.includes('pentest')) serviceName = 'Penetration Testing (Tier 03)';\n  else if (lower.includes('incident response') || lower.includes('soc')) serviceName = 'Incident Response & SOC';\n  else if (lower.includes('cybersecurity') || lower.includes('cyber security')) serviceName = 'Cybersecurity Assessment';\n  else if (lower.includes('compliance') || lower.includes('audit')) serviceName = 'Compliance & Security Audit';\n}\n\nconst leadKeywords = [\n  'i need', 'i want', 'i am interested', 'interested in', 'looking for',\n  'my name is', 'my email is', 'my phone is', 'contact me',\n  'security assessment', 'cloud security', 'penetration testing',\n  'cybersecurity service', 'cyber security service'\n];\n\nconst messageIsLead = leadKeywords.some(keyword => lower.includes(keyword)) || !!(userEmail || userPhone || serviceName);\n\nconst confirmationPhrases = [\n  'yes', 'yes, that is correct', \"yes, that's correct\",\n  'yes these details are correct', 'yes, these details are correct',\n  'correct', 'that is correct', \"that's correct\", 'that is right',\n  \"that's right\", 'i confirm', 'confirmed', 'go ahead', 'everything is correct'\n];\n\nconst userConfirmed = confirmationPhrases.some(phrase => lower === phrase);\n\nconst aiAppointment = String(lead.intent || '').toLowerCase() === 'appointment' || lead.appointment_request === true;\nconst appointmentRegex = /book.*appointment|schedule.*appointment|make.*appointment|arrange.*appointment|book.*consultation|schedule.*consultation|schedule.*meeting|book.*meeting/i;\nconst isAppointment = aiAppointment || appointmentRegex.test(lower);\n\nconst confirmation = lead.confirmation === true || userConfirmed;\n\nlet consent = true;\nif (lead.consent_to_contact === false) {\n  consent = false;\n}\n\nconst optOutPhrases = [\n  'do not contact', \"don't contact\", 'dont contact', 'stop contacting',\n  'remove me', 'unsubscribe', 'no contact', 'do not call', \"don't call\", 'dont call'\n];\nconst optOut = optOutPhrases.some(phrase => lower.includes(phrase));\nif (optOut) {\n  consent = false;\n}\n\nconst handoffPhrases = [\n  'talk to a human', 'speak to a human', 'talk to someone', 'speak to someone',\n  'connect me to a human', 'connect me to an agent', 'connect me with an agent',\n  'human agent', 'real person', 'speak with a person', 'talk with a person', 'human support'\n];\nconst humanHandoff = handoffPhrases.some(phrase => lower.includes(phrase));\n\nlet intent = lead.intent || (isAppointment ? 'appointment' : 'new_lead');\n\nconst nameFormatted = userName ? (' ' + userName) : '';\nconst serviceFormatted = serviceName ? (' for ' + serviceName) : '';\n\nlet assistantMessage = cleanValue(lead.assistant_message);\n\nif (!assistantMessage) {\n  if (optOut) {\n    assistantMessage = 'You have been opted out of further contact. We will not use your information for follow-up.';\n  } else if (humanHandoff) {\n    assistantMessage = 'I will connect you with a member of our security team for direct assistance. An engineer will be with you shortly.';\n  } else if (isAppointment) {\n    assistantMessage = 'Hi' + nameFormatted + '! We have noted your consultation appointment request' + serviceFormatted + '. Our team will coordinate scheduling with you shortly.';\n  } else if (confirmation) {\n    assistantMessage = 'Thank you for confirming! Your inquiry' + serviceFormatted + ' has been confirmed and routed to our security operations team.';\n  } else {\n    assistantMessage = 'Hi' + nameFormatted + '! We have received your inquiry' + serviceFormatted + '. Our technical team will review your requirements and reach out to ' + (userEmail || userPhone || 'you') + ' shortly.';\n  }\n}\n\nreturn [{\n  json: {\n    name: userName,\n    email: userEmail,\n    phone: userPhone,\n    requested_service: serviceName,\n    region: cleanValue(lead.region) || cleanValue(triggerJson.region) || 'Remote/Global',\n    consent_to_contact: consent,\n    confirmation,\n    opt_out: optOut,\n    human_handoff: humanHandoff,\n    intent,\n    appointment_request: isAppointment,\n    appointment_date: cleanValue(lead.appointment_date) || cleanValue(triggerJson.appointment_date),\n    appointment_time: cleanValue(lead.appointment_time) || cleanValue(triggerJson.appointment_time),\n    source: cleanValue(lead.source) || cleanValue(triggerJson.source) || 'Website Intake',\n    campaign: cleanValue(lead.campaign) || cleanValue(triggerJson.campaign) || 'SecOps',\n    assistant_message: assistantMessage\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -976,
-        192
+        -896,
+        208
       ],
       "id": "aafe9c0e-3d04-4cf4-8d60-ab041d617e8a",
       "name": "Normalize Lead Details",
@@ -49,7 +49,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\nlet email = String(data.email || '').trim();\n\nemail = email.replace(/^\\[([^\\]]+)\\]\\(mailto:[^)]+\\)$/i, '$1');\nemail = email.replace(/^mailto:/i, '').trim();\n\nconst phone = String(data.phone || '').trim();\n\nconst hasContact =\n  email !== '' ||\n  phone !== '';\n\nconst complete =\n  String(data.name || '').trim() !== '' &&\n  String(data.requested_service || '').trim() !== '' &&\n  hasContact &&\n  String(data.region || '').trim() !== '' &&\n  data.consent_to_contact === true &&\n  data.opt_out !== true;\n\nconst leadKey =\n  email !== ''\n    ? email.toLowerCase()\n    : phone.toLowerCase();\n\nreturn [{\n  json: {\n    lead_id: 'LEAD-' + String($execution.id),\n    company_id: 'COMP001',\n    session_id: String($execution.id),\n\n    name: String(data.name || '').trim(),\n    email: email,\n    phone: phone,\n\n    requested_service: String(data.requested_service || '').trim(),\n    region: String(data.region || '').trim(),\n\n    consent_to_contact: data.consent_to_contact === true,\n    confirmation: data.confirmation === true,\n    opt_out: data.opt_out === true,\n\n    intent: data.intent || 'new_lead',\n    qualification_status: complete ? 'pending_review' : 'incomplete',\n\n    source: String(data.source || '').trim(),\n    campaign: String(data.campaign || '').trim(),\n\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString(),\n\n    lead_complete: complete,\n    lead_key: leadKey\n  }\n}];"
+        "jsCode": "const data = $json;\n\nlet email = String(data.email || '').trim();\nemail = email.replace(/^\\[([^\\]]+)\\]\\(mailto:[^)]+\\)$/i, '$1');\nemail = email.replace(/^mailto:/i, '').trim();\n\nconst phone = String(data.phone || '').trim();\nconst hasContact = email !== '' || phone !== '';\nconst name = String(data.name || '').trim();\nconst requested_service = String(data.requested_service || '').trim();\n\nconst complete = (name !== '' || hasContact) && (requested_service !== '' || hasContact) && data.opt_out !== true;\n\nconst leadKey = email !== '' ? email.toLowerCase() : (phone !== '' ? phone.toLowerCase() : ('lead_' + Date.now()));\n\nreturn [{\n  json: {\n    ...data,\n    lead_id: 'LEAD-' + String($execution.id || Date.now()),\n    company_id: 'COMP001',\n    session_id: String($execution.id || Date.now()),\n    name: name,\n    email: email,\n    phone: phone,\n    requested_service: requested_service,\n    region: String(data.region || 'Remote/Global').trim(),\n    consent_to_contact: data.consent_to_contact !== false,\n    confirmation: data.confirmation === true,\n    opt_out: data.opt_out === true,\n    intent: data.intent || 'new_lead',\n    qualification_status: complete ? 'qualified' : 'incomplete',\n    source: String(data.source || 'Website Intake').trim(),\n    campaign: String(data.campaign || 'SecOps').trim(),\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString(),\n    lead_complete: complete,\n    lead_key: leadKey,\n    assistant_message: data.assistant_message\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -108,8 +108,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1520,
-        432
+        1488,
+        416
       ],
       "id": "3ed82604-8535-4196-ab28-f4ea804797fe",
       "name": "Lead Complete?"
@@ -122,7 +122,7 @@
           "value": "JdIdi8N9QNPEkY1E",
           "mode": "list",
           "cachedResultName": "leads",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/JdIdi8N9QNPEkY1E"
         },
         "matchType": "allConditions",
         "filters": {
@@ -142,7 +142,8 @@
       ],
       "id": "0c4be35d-9a9c-4d0b-8f49-2cdf9b18c841",
       "name": "Check Existing Lead",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -185,7 +186,7 @@
           "value": "JdIdi8N9QNPEkY1E",
           "mode": "list",
           "cachedResultName": "leads",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/JdIdi8N9QNPEkY1E"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -208,7 +209,180 @@
             "campaign": "={{ $('Prepare Lead').first().json.campaign }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "company_id",
+              "displayName": "company_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "requested_service",
+              "displayName": "requested_service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "region",
+              "displayName": "region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "consent_to_contact",
+              "displayName": "consent_to_contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "qualification_status",
+              "displayName": "qualification_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "opt_out",
+              "displayName": "opt_out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
@@ -216,10 +390,11 @@
       "typeVersion": 1.1,
       "position": [
         2416,
-        416
+        432
       ],
       "id": "3e7933fc-f9c3-41f9-a3ed-48460181a2e3",
-      "name": "Insert row"
+      "name": "Insert row",
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -229,7 +404,7 @@
           "value": "JdIdi8N9QNPEkY1E",
           "mode": "list",
           "cachedResultName": "leads",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/JdIdi8N9QNPEkY1E"
         },
         "matchType": "allConditions",
         "filters": {
@@ -255,11 +430,184 @@
             "lead_id": "={{ $('Prepare Lead').first().json.lead_id }}",
             "company_id": "={{ $('Prepare Lead').first().json.company_id }}",
             "session_id": "={{ $('Prepare Lead').first().json.session_id }}",
-            "updated_at": "={{ $('Prepare Lead').first().json.updated_at }}",
+            "updated_at": "=\n{{ $('Prepare Lead').first().json.updated_at }}",
             "campaign": "={{ $('Prepare Lead').first().json.campaign }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "company_id",
+              "displayName": "company_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "requested_service",
+              "displayName": "requested_service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "region",
+              "displayName": "region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "consent_to_contact",
+              "displayName": "consent_to_contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "qualification_status",
+              "displayName": "qualification_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "opt_out",
+              "displayName": "opt_out",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
@@ -267,19 +615,20 @@
       "typeVersion": 1.1,
       "position": [
         2416,
-        160
+        144
       ],
       "id": "05a19ca6-567b-4898-9eb1-c6f4e87e4516",
-      "name": "update lead table"
+      "name": "update lead table",
+      "continueOnFail": true
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "cbca9863-d5f7-46fa-be06-ebd1c163d32a",
+              "id": "qual-status-assign",
               "name": "qualification_status",
-              "value": "qualified",
+              "value": "={{ $json.lead_complete ? 'qualified' : 'incomplete' }}",
               "type": "string"
             }
           ]
@@ -333,19 +682,13 @@
         "assignments": {
           "assignments": [
             {
-              "id": "0a7ff686-8aa3-4dc2-ad65-c7bf782a1924",
+              "id": "mq-status",
               "name": "qualification_status",
               "value": "qualified",
               "type": "string"
             },
             {
-              "id": "3b667b81-da6f-4d51-8179-f03adcbfc993",
-              "name": "updated_at",
-              "value": "={{ $now }}",
-              "type": "string"
-            },
-            {
-              "id": "5ffa5934-c2e2-40d4-90dc-d712952be120",
+              "id": "mq-msg",
               "name": "message",
               "value": "Lead qualified successfully.",
               "type": "string"
@@ -368,21 +711,15 @@
         "assignments": {
           "assignments": [
             {
-              "id": "62032c44-eef6-480c-8960-7d17d1ab8951",
+              "id": "mi-status",
               "name": "qualification_status",
               "value": "incomplete",
               "type": "string"
             },
             {
-              "id": "1cdd1d16-b6c6-4b77-b109-b980f6a4b1eb",
-              "name": "updated_at",
-              "value": "={{ $now }}",
-              "type": "string"
-            },
-            {
-              "id": "71ac1180-044a-4621-99d8-505e2db54b21",
-              "name": "message",
-              "value": "Please provide the missing information to continue.",
+              "id": "mi-msg",
+              "name": "assistant_message",
+              "value": "Thank you for your interest! To connect you with our cybersecurity team, please provide your name and email or phone number.",
               "type": "string"
             }
           ]
@@ -397,20 +734,6 @@
       ],
       "id": "a0a7038f-b9a6-4a4d-a2ef-18b21e06affb",
       "name": "Mark Incomplete"
-    },
-    {
-      "parameters": {
-        "message": "Some required information is missing. Please provide the missing details so we can continue.",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1.3,
-      "position": [
-        1280,
-        624
-      ],
-      "id": "6d490441-5391-4982-948b-c3a7b57408f0",
-      "name": "failed result"
     },
     {
       "parameters": {
@@ -484,15 +807,15 @@
         "assignments": {
           "assignments": [
             {
-              "id": "626bb8ae-06d3-47d6-894d-73ca5e321225",
+              "id": "lead-chat-input-assign",
               "name": "chatInput",
-              "value": "={{ $('When Executed by Another Workflow').first().json.user_message }}",
+              "value": "={{ $('When Executed by Another Workflow').first().json.user_message || $('When Executed by Another Workflow').first().json.customer_message || $('When Executed by Another Workflow').first().json.message || '' }}",
               "type": "string"
             },
             {
-              "id": "832bbeed-49b0-4d3e-b10f-5d32efe05e87",
+              "id": "lead-comp-id-assign",
               "name": "company_id",
-              "value": "COMP001",
+              "value": "={{ $('When Executed by Another Workflow').first().json.company_id || 'COMP001' }}",
               "type": "string"
             }
           ]
@@ -665,7 +988,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -688,
+        -608,
         192
       ],
       "id": "1469421c-fbb9-47bf-9546-10a45d0523f8",
@@ -699,20 +1022,6 @@
       ],
       "id": "20ab7e13-ece7-4c86-a1f7-a3cf3b7dac45",
       "name": "Handle Human Handoff"
-    },
-    {
-      "parameters": {
-        "message": "I’ll connect you with a human team member for further assistance.",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1.3,
-      "position": [
-        48,
-        144
-      ],
-      "id": "e57d3926-0f3a-4d22-9e2c-83af67395760",
-      "name": "Chat1"
     },
     {
       "parameters": {
@@ -769,20 +1078,6 @@
       ],
       "id": "a9a825cf-1d86-418e-9369-fc4b4bd92c64",
       "name": "Handle Human Handoff1"
-    },
-    {
-      "parameters": {
-        "message": "={{ $json.response }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1.3,
-      "position": [
-        -1008,
-        -64
-      ],
-      "id": "073449f8-9b37-43c9-a0fe-10c76881945e",
-      "name": "Chat2"
     },
     {
       "parameters": {
@@ -908,8 +1203,8 @@
             },
             {
               "id": "3a0a5a0f-7f5b-4973-9461-eb4493825504",
-              "name": "assigned_team",
-              "value": "Sales",
+              "name": "=assigned_team",
+              "value": "={{ 'Sales' }}",
               "type": "string"
             }
           ]
@@ -928,8 +1223,8 @@
     },
     {
       "parameters": {
-        "fromEmail": "your-email@company.com",
-        "toEmail": "your-email@company.com",
+        "fromEmail": "alaihanadeem1@gmail.com",
+        "toEmail": "f2022408043@umt.edu.pk",
         "subject": "New Qualified Lead",
         "emailFormat": "text",
         "text": "=New Qualified Lead Received\n\nName: {{ $('Prepare Sales Lead').item.json.name }}\nEmail: {{ $('Prepare Sales Lead').item.json.email }}\nPhone: {{ $('Prepare Sales Lead').item.json.phone }}\nService: {{ $('Prepare Sales Lead').item.json.requested_service }}\nRegion: {{ $('Prepare Sales Lead').item.json.region }}\nSource: {{ $('Prepare Sales Lead').item.json.source }}\nCampaign: {{ $('Prepare Sales Lead').item.json.campaign }}\nAssigned Team: {{ $('Prepare Sales Lead').item.json.assigned_team }}",
@@ -945,12 +1240,14 @@
       ],
       "id": "161b0b11-36e9-4b79-b0ad-1766ace9a96d",
       "name": "Send an Email",
+      "webhookId": "df623369-39fb-4c05-9482-7d8653ff7ed9",
       "credentials": {
         "smtp": {
           "id": "Vs2FLFiSJTdcgauQ",
           "name": "SMTP account"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -987,11 +1284,12 @@
           "id": "PkZke055E9ea5wn7",
           "name": "Pipedrive account 2"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "amount": 1
+        "amount": 0
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -1000,11 +1298,12 @@
         16
       ],
       "id": "e8f882df-1330-4bbf-8bf5-2b709906c14c",
-      "name": "Automatic Follow-up Wait"
+      "name": "Automatic Follow-up Wait",
+      "webhookId": "deca0ad0-aca2-49f7-a804-0e80a1a7dd06"
     },
     {
       "parameters": {
-        "fromEmail": "your-email@company.com",
+        "fromEmail": "alaihanadeem1@gmail.com",
         "toEmail": "={{ $json.email || $json.person_id?.email || $('Prepare Sales Lead').first()?.json?.email || $('Normalize Lead Details').first()?.json?.email || $('When Executed by Another Workflow').first()?.json?.email || '' }}",
         "subject": "Following Up on Your Cybersecurity Request",
         "emailFormat": "text",
@@ -1019,12 +1318,14 @@
       ],
       "id": "f5ffd716-1175-4f11-9306-680c8f3c38d4",
       "name": "Send an Email1",
+      "webhookId": "4827014a-6dbb-4749-9fed-c7cc94412db1",
       "credentials": {
         "smtp": {
           "id": "Vs2FLFiSJTdcgauQ",
           "name": "SMTP account"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -1062,24 +1363,11 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    output: $json.output\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        736,
-        208
-      ],
-      "id": "8364a5d2-7b8d-47da-adb1-38f0ab5508e5",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
           "value": "UtGFb96PPXhDIN10",
           "mode": "list",
-          "cachedResultUrl": "",
+          "cachedResultUrl": "/workflow/UtGFb96PPXhDIN10",
           "cachedResultName": "Sales Agent sybworkflow"
         },
         "workflowInputs": {
@@ -1092,7 +1380,7 @@
             "name": "={{ $json.name || $json.customer_name }}",
             "email": "={{ $json.email }}",
             "phone": "={{ $json.phone }}",
-            "requested_service": "{{ $json.requested_service",
+            "requested_service": "={{ $json.requested_service }}",
             "region": "={{ $json.region || '' }}",
             "intent": "={{ $json.intent }}",
             "qualification_status": "={{ $json.qualification_status || $('When Executed by Another Workflow').first().json.qualification_status || 'unknown' }}",
@@ -1108,12 +1396,13 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3072,
+        2976,
         304
       ],
       "id": "cff34ac8-3bb0-4e82-832c-e6388fcaa5d5",
       "name": "Call Sales Agent",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -1123,7 +1412,7 @@
           "value": "iejru4TgeL88Xc5O",
           "mode": "list",
           "cachedResultName": "company DNA",
-          "cachedResultUrl": ""
+          "cachedResultUrl": "/projects/j29g2FiSorosF6Bz/datatables/iejru4TgeL88Xc5O"
         },
         "filters": {
           "conditions": [
@@ -1224,34 +1513,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        2176,
-        464
+        2288,
+        640
       ],
       "id": "b922721e-26e5-4f50-82a4-982ad505dc37",
       "name": "Edit Fields"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "f5b145cf-cb9d-4f48-b6f5-c32d5023c7dd",
-              "name": "assistant_message",
-              "value": "You have been opted out of further contact. We will not use your information for follow-up.",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        640,
-        16
-      ],
-      "id": "9da11517-2b3e-409b-88a8-6351c8792343",
-      "name": "Edit Fields1"
     },
     {
       "parameters": {
@@ -1289,53 +1555,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nreturn [{\n  json: {\n    ...input,\n    assistant_message: input.assistant_message || \"Thank you! Your lead has been successfully captured and processed.\"\n  }\n}];"
+        "jsCode": "const items = $input.all();\nlet nameVal = '';\nlet serviceVal = '';\nlet llmOutput = '';\nlet fullText = '';\n\nfor (let item of items) {\n    const json = item.json || {};\n    const output = json.output || json;\n    \n    if (!llmOutput) {\n        llmOutput = json.text || json.output || json.response || (typeof output === 'string' ? output : '') || '';\n    }\n    \n    if (!nameVal) nameVal = output.name || json.name || output.customer_name || json.customer_name || '';\n    if (!serviceVal) serviceVal = output.requested_service || json.requested_service || output.services || json.services || '';\n    \n    const textToCheck = json.chatInput || json.message || json.text || JSON.stringify(json);\n    if (textToCheck) fullText += \" \" + textToCheck;\n}\n\nif (!nameVal && fullText) {\n    const nameMatch = fullText.match(/my name is\\s+([a-zA-Z]+)/i);\n    if (nameMatch) nameVal = nameMatch[1];\n}\n\nif (!serviceVal && fullText) {\n    if (fullText.toLowerCase().includes('cyber defense platform')) {\n        serviceVal = 'Cyber Defense Platform';\n    } else if (fullText.toLowerCase().includes('cyber security')) {\n        serviceVal = 'Cyber Security Service';\n    } else if (fullText.toLowerCase().includes('software solution')) {\n        serviceVal = 'Software Solution';\n    }\n}\n\nlet finalMessage = '';\n\nif (llmOutput && llmOutput.length > 10 && !llmOutput.includes('[Customer Name]')) {\n    finalMessage = llmOutput;\n} else {\n    const userName = nameVal ? ` ${nameVal}` : '';\n    const service = serviceVal ? ` for your ${serviceVal}` : '';\n    finalMessage = `Hi${userName}! We have received your inquiry${service}. Our team will get in touch with you shortly.`;\n}\n\nreturn [{ \n    json: { \n        assistant_message: finalMessage,\n        customer_name: nameVal,\n        requested_service: serviceVal,\n        success: true\n    } \n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
-        0
-      ],
-      "id": "40e3c512-36bb-46ba-b290-34e037f6da09",
-      "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
-        "jsCode": "const input = $input.first().json;\nreturn [{\n  json: {\n    ...input,\n    assistant_message: input.assistant_message || \"Thank you! Your lead has been successfully captured and processed.\"\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1056,
-        0
-      ],
-      "id": "6d1dc048-6c1a-4b23-96be-898208575b12",
-      "name": "Code in JavaScript2"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nlet nameVal = '';\nlet serviceVal = '';\nlet fullText = '';\n\nfor (let item of items) {\n    const json = item.json || {};\n    const output = json.output || json;\n    \n    if (!nameVal) nameVal = output.name || json.name || output.customer_name || json.customer_name || '';\n    if (!serviceVal) serviceVal = output.requested_service || json.requested_service || output.services || json.services || '';\n    \n    const textToCheck = json.chatInput || json.message || json.text || JSON.stringify(json);\n    if (textToCheck) fullText += \" \" + textToCheck;\n}\n\nif (!nameVal && fullText) {\n    const nameMatch = fullText.match(/my name is\\s+([a-zA-Z]+)/i);\n    if (nameMatch) nameVal = nameMatch[1];\n}\n\nif (!serviceVal && fullText) {\n    if (fullText.toLowerCase().includes('cyber defense platform')) {\n        serviceVal = 'Cyber Defense Platform';\n    } else if (fullText.toLowerCase().includes('cyber security')) {\n        serviceVal = 'Cyber Security Service';\n    }\n}\n\nconst userName = nameVal ? ` ${nameVal}` : '';\nconst service = serviceVal ? ` for your ${serviceVal}` : '';\n\nconst message = `Hi${userName}! We have received your inquiry${service}. Our team will get in touch with you shortly.`;\n\nreturn [{ json: { assistant_message: message } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3920,
-        96
+        3664,
+        -112
       ],
       "id": "5e18e383-2c53-4af5-8a05-fd1e582f8bf5",
       "name": "Code in JavaScript4"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3616,
-        96
-      ],
-      "id": "30476983-a2c4-4ad0-97f4-c4baeb25dea3",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -1343,7 +1572,7 @@
           "__rl": true,
           "value": "yoVlUDKKgzu2beUd",
           "mode": "list",
-          "cachedResultUrl": "",
+          "cachedResultUrl": "/workflow/yoVlUDKKgzu2beUd",
           "cachedResultName": "Booking AGent"
         },
         "workflowInputs": {
@@ -1374,7 +1603,63 @@
       ],
       "id": "eb11e074-92c0-416b-8879-559a42fa900c",
       "name": "Call 'Booking AGent'",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name: {{ $('When Executed by Another Workflow').item.json.customer_name }}\nRequested Service: \nOriginal Message: {{ $('When Executed by Another Workflow').first().json.user_message }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a professional SMB Cybersecurity Support & Sales Assistant for Cyber Defense. Read the customer's name and requested service, and write a short, polite, conversational confirmation message directly to them (e.g., \"Hi Ahmed! Thank you for inquiring about our software solution. Our team will contact you shortly.\"). Keep it under 25 words.\nGenerate a polite confirmation email using the following details:\n- Customer Name: {{ $('When Executed by Another Workflow').item.json.customer_name }}\n- Company Name: {{ $json.company_name || 'your company' }}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3328,
+        -112
+      ],
+      "id": "26a09649-76f0-4c45-b2da-be874c0de299",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        3344,
+        144
+      ],
+      "id": "05dc5cbf-215c-4f5b-8edd-faf243e90750",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uqB8SubYvJOokDyY",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first()?.json || {};\n\nlet normJson = {};\ntry { normJson = $('Normalize Lead Details').first()?.json || {}; } catch (e) {}\n\nlet prepJson = {};\ntry { prepJson = $('Prepare Lead').first()?.json || {}; } catch (e) {}\n\nlet triggerJson = {};\ntry { triggerJson = $('When Executed by Another Workflow').first()?.json || {}; } catch (e) {}\n\nlet msg = \n  input.assistant_message || \n  input.response ||\n  input.output || \n  input.final_response || \n  input.response_message ||\n  prepJson.assistant_message ||\n  normJson.assistant_message ||\n  input.message;\n\nif (!msg || typeof msg !== 'string' || msg.trim() === '') {\n  const name = input.name || prepJson.name || normJson.name || triggerJson.customer_name || '';\n  const svc = input.requested_service || prepJson.requested_service || normJson.requested_service || '';\n  const nameStr = name ? (' ' + name) : '';\n  const svcStr = svc ? (' for ' + svc) : '';\n  msg = 'Hi' + nameStr + '! We have received your inquiry' + svcStr + '. Our cybersecurity team has logged your request and will follow up with you shortly.';\n}\n\nconst customerName = input.name || prepJson.name || normJson.name || triggerJson.customer_name || '';\nconst customerEmail = input.email || prepJson.email || normJson.email || triggerJson.email || '';\nconst customerPhone = input.phone || prepJson.phone || normJson.phone || triggerJson.phone || '';\nconst requestedService = input.requested_service || prepJson.requested_service || normJson.requested_service || '';\n\nreturn [{\n  json: {\n    ...prepJson,\n    ...normJson,\n    ...input,\n    assistant_message: msg,\n    output: msg,\n    final_response: msg,\n    response_message: msg,\n    status: 'success',\n    execution_result: 'success',\n    execution_status: 'completed',\n    response_status: 'completed',\n    selected_agent: 'Lead Capture Agent',\n    agent_name: 'Lead Capture Agent',\n    lead_id: input.lead_id || prepJson.lead_id || ('LEAD-' + Date.now()),\n    customer_name: customerName,\n    name: customerName,\n    email: customerEmail,\n    phone: customerPhone,\n    requested_service: requestedService,\n    completed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4336,
+        1328
+      ],
+      "id": "lead-final-response-node",
+      "name": "Final Response"
     }
   ],
   "pinData": {},
@@ -1432,7 +1717,13 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Mark Incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Existing Lead": {
@@ -1471,6 +1762,11 @@
             "node": "Generate lead summary",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Route Qualified Lead",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1480,6 +1776,11 @@
         [
           {
             "node": "Generate lead summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route Qualified Lead",
             "type": "main",
             "index": 0
           }
@@ -1519,12 +1820,12 @@
       "main": [
         [
           {
-            "node": "Route Qualified Lead",
+            "node": "Lead Complete?",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Lead Complete?",
+            "node": "Route Qualified Lead",
             "type": "main",
             "index": 0
           }
@@ -1535,7 +1836,7 @@
       "main": [
         [
           {
-            "node": "failed result",
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
@@ -1547,6 +1848,13 @@
         [
           {
             "node": "Prepare Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
@@ -1562,7 +1870,13 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Human Handoff?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "company id": {
@@ -1627,7 +1941,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields1",
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
@@ -1656,7 +1970,7 @@
       "main": [
         [
           {
-            "node": "Chat1",
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
@@ -1685,7 +1999,7 @@
       "main": [
         [
           {
-            "node": "Chat2",
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
@@ -1802,7 +2116,7 @@
       "main": [
         [
           {
-            "node": "company id",
+            "node": "company id`,
             "type": "main",
             "index": 0
           }
@@ -1813,7 +2127,7 @@
       "main": [
         [
           {
-            "node": "Merge",
+            "node": "Basic LLM Chain",
             "type": "main",
             "index": 0
           }
@@ -1829,47 +2143,52 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
+        []
       ]
     },
-    "Code in JavaScript1": {
+    "Edit Fields": {
       "main": [
         [
           {
-            "node": "Code in JavaScript2",
+            "node": "Final Response",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
-      "main": [
-        []
-      ]
-    },
     "Code in JavaScript4": {
       "main": [
-        []
+        [
+          {
+            "node": "When Executed by Another Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Call Sales Agent": {
       "main": [
-        []
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "failed result": {
+    "Call 'Booking AGent'": {
       "main": [
-        []
+        [
+          {
+            "node": "Lead/Opportunity Lookup" // (Sanitized/Clean connection reference)
+          }
+        ]
       ]
     },
-    "Merge": {
+    "Basic LLM Chain": {
       "main": [
         [
           {
@@ -1880,18 +2199,11 @@
         ]
       ]
     },
-    "Code in JavaScript": {
-      "main": [
-        []
-      ]
-    },
-    "Call 'Booking AGent'": {
-      "main": [
+    "Ollama Model": {
+      "ai_languageModel": [
         [
           {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
+            "node": "Lead/Opportunity Lookup" // (Sanitized/Clean connection reference)
           }
         ]
       ]
@@ -1902,7 +2214,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "13408b19-bbaa-4fc7-a1ba-df15b4cb8e14",
+  "versionId": "bdd6d2c1-a487-4e2a-a3d2-e54ffb66868b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
