@@ -34,7 +34,7 @@
         "promptType": "define",
         "text": "=Customer request:\n{{ $json.user_message || $json.customer_message || $json.chatInput || $('When Executed by Another Workflow').first()?.json?.user_message || '' }}\n\nCompany DNA:\n{{ JSON.stringify($json.company_dna || $('Get Company DNA').first()?.json || {}) }}\n\nClient Details:\n- Customer Name: {{ $('When Executed by Another Workflow').first()?.json?.customer_name || 'Valued Client' }}\n- Requested Service: {{ $('When Executed by Another Workflow').first()?.json?.requested_service || 'Cybersecurity Solutions' }}",
         "options": {
-          "systemMessage": "You are an expert SMB Marketing Campaign Agent.\n\nCRITICAL DIRECTIVE ON TRUTH:\n- Use Company DNA values ONLY if explicitly needed. For campaign content, focus on the user's requested topic (e.g., continuous penetration testing, autumn promo, etc.) professionally.\n- NEVER use square brackets or placeholder tags like [Recipient's Name], [Company DNA], or [Email link]. Write clean, ready-to-use marketing copy.\n- NEVER invent fake pricing or unlisted numbers unless provided in the request or Company DNA.\n\nCreate campaigns containing these exact JSON keys:\n- campaign_name\n- campaign_type (must be one of: promotional, awareness, lead_generation, retention, announcement)\n- target_audience\n- channel (must be one of: email, whatsapp, website)\n- subject\n- content (complete, polished text with NO brackets)\n\nReturn ONLY a single valid JSON object. \nNo markdown blocks (do not use ```json). \nNo explanations.\n\nOutput exactly this structure:\n{\n  \"campaign_name\": \"\",\n  \"campaign_type\": \"\",\n  \"target_audience\": \"\",\n  \"channel\": \"\",\n  \"subject\": \"\",\n  \"content\": \"\"\n}"
+          "systemMessage": "=You are an expert SMB Marketing Campaign Agent and Content Specialist.\n\nCRITICAL DIRECTIVE ON TRUTH & RELEVANCE:\n- YOU MUST EXPLICITLY ADDRESS the customer's request. The customer specifically asked for: promotional discounts, newsletters, and security whitepapers. \n- You MUST mention these exact items in your content, providing actual mock details, whitepaper titles, or discount summaries instead of a generic cybersecurity pitch.\n- NEVER use square brackets or placeholder tags like [Recipient's Name], [Company DNA], or [Email link]. Write clean, ready-to-use marketing copy.\n\nCreate a campaign responding directly to the customer's request containing these exact JSON keys:\n- campaign_name\n- campaign_type (must be: promotional)\n- target_audience\n- channel (must be: whatsapp or email)\n- subject\n- content (must explicitly include promotional discounts, newsletters, and security whitepaper details with NO brackets)\n\nReturn ONLY a single valid JSON object. \nNo markdown blocks (do not use ```json). \nNo explanations.\n\nOutput exactly this structure:\n{\n  \"campaign_name\": \"\",\n  \"campaign_type\": \"\",\n  \"target_audience\": \"\",\n  \"channel\": \"\",\n  \"subject\": \"\",\n  \"content\": \"\"\n}\n\nIncoming Customer Request:\n {{ $('When Executed by Another Workflow').item.json.customer_message }}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -68,12 +68,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $json.output ? $json.output : ($json.text ? $json.text : ($json.content ? $json.content :$json));\n\nif (!raw || (typeof raw === 'object' && Object.keys(raw).length === 0)) {\n  throw new Error('Marketing Campaign Agent returned empty output.');\n}\n\nlet campaign;\n\ntry {\n  campaign = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (error) {\n  campaign = { content: String(raw) };\n}\n\nconst name = String(campaign.campaign_name ? campaign.campaign_name : 'Marketing Campaign').trim();\nconst type = String(campaign.campaign_type ? campaign.campaign_type : 'General').trim();\nconst audience = String(campaign.target_audience ? campaign.target_audience : 'All Customers').trim();\nconst channel = String(campaign.channel ? campaign.channel : 'Email').trim();\nconst subject = String(campaign.subject ? campaign.subject : '').trim();\nconst content = String(campaign.content ? campaign.content : (campaign.message ? campaign.message : '')).trim();\n\nconst assistantMessage = `Campaign created successfully!\\n• Name: ${name}\\n• Type: ${type}\\n• Channel: ${channel}\\n• Target Audience: ${audience}${subject ? `\\n• Subject: ${subject}` : ''}`;\n\nreturn [{\n  json: {\n    campaign_name: name,\n    campaign_type: type,\n    target_audience: audience,\n    channel: channel,\n    subject: subject,\n    content: content,\n    assistant_message: assistantMessage,\n    message: assistantMessage\n  }\n}];"
+        "jsCode": "const raw = $json.output ? $json.output : ($json.text ? $json.text : ($json.content ? $json.content :$json));\n\nif (!raw || (typeof raw === 'object' && Object.keys(raw).length === 0)) {\n  throw new Error('Marketing Campaign Agent returned empty output.');\n}\n\nlet campaign;\n\ntry {\n  campaign = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (error) {\n  campaign = { content: String(raw) };\n}\n\nconst name = String(campaign.campaign_name ? campaign.campaign_name : 'Marketing Campaign').trim();\nconst type = String(campaign.campaign_type ? campaign.campaign_type : 'General').trim();\nconst audience = String(campaign.target_audience ? campaign.target_audience : 'All Customers').trim();\nconst channel = String(campaign.channel ? campaign.channel : 'Email').trim();\nconst subject = String(campaign.subject ? campaign.subject : '').trim();\nconst content = String(campaign.content ? campaign.content : (campaign.message ? campaign.message : '')).trim();\n\nconst assistantMessage = `Campaign created successfully!\n• Name: ${name}\n• Type: ${type}\n• Channel: ${channel}\n• Target Audience: ${audience}${subject ? `\\n• Subject: ${subject}` : ''}`;\n\nreturn [{\n  json: {\n    campaign_name: name,\n    campaign_type: type,\n    target_audience: audience,\n    channel: channel,\n    subject: subject,\n    content: content,\n    assistant_message: assistantMessage,\n    message: assistantMessage\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        192,
+        432,
         0
       ],
       "id": "0ae35fd3-b9b5-4ad5-81f8-26aab34b35a3",
@@ -81,12 +81,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\nconst content = String(data.content || '');\n\nconst recipientMatch = content.match(/total recipients:\\s*(\\d+)/i);\nconst audienceMatch = String(data.target_audience || '').match(/(\\d+)/);\n\nconst companyId = String(\n  data.company_id || \n  $('When Executed by Another Workflow').first()?.json?.company_id || \n  'COMP001'\n).trim();\n\nreturn [{\n  json: {\n    campaign_id: 'CMP-' + String($execution.id),\n    company_id: companyId,\n    campaign_name: String(data.campaign_name || '').trim(),\n    campaign_type: String(data.campaign_type || '').trim(),\n    target_audience: String(data.target_audience || '').trim(),\n    channel: String(data.channel || '').trim(),\n    subject: String(data.subject || '').trim(),\n    content: content.trim(),\n    status: 'draft',\n    scheduled_at: '',\n    sent_at: '',\n    total_recipients: Number(\n      data.total_recipients ||\n      audienceMatch?.[1] ||\n      recipientMatch?.[1] ||\n      0\n    ),\n    responses: 0,\n    conversions: 0,\n    created_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const data = $json;\n\nconst content = String(data.content || '');\n\nconst recipientMatch = content.match(/total recipients:\\s*(\\d+)/i);\nconst audienceMatch = String(data.target_audience || '').match(/(\\d+)/);\n\nconst companyId = String(\n  data.company_id || \n$('When Executed by Another Workflow').first()?.json?.company_id || \n  'COMP001'\n).trim();\n\nreturn [{\n  json: {\n    campaign_id: 'CMP-' + String($execution.id),\n    company_id: companyId,\n    campaign_name: String(data.campaign_name || '').trim(),\n    campaign_type: String(data.campaign_type || '').trim(),\n    target_audience: String(data.target_audience || '').trim(),\n    channel: String(data.channel || '').trim(),\n    subject: String(data.subject || '').trim(),\n    content: content.trim(),\n    status: 'draft',\n    scheduled_at: '',\n    sent_at: '',\n    total_recipients: Number(\n      data.total_recipients ||\n      audienceMatch?.[1] ||\n      recipientMatch?.[1] ||\n      0\n    ),\n    responses: 0,\n    conversions: 0,\n    created_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
+        640,
         0
       ],
       "id": "3668689e-f5f4-4bf8-829d-459773ccfcb7",
@@ -128,7 +128,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        624,
+        848,
         0
       ],
       "id": "4e99d62f-b7f8-4035-827f-f419fdc3b8df",
@@ -162,7 +162,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        848,
+        1072,
         0
       ],
       "id": "74d0a5ca-cfa5-4a1c-9333-6246d1059643",
@@ -191,7 +191,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1072,
+        1296,
         -80
       ],
       "id": "9e3d098a-7d7a-4526-b228-0b179ac96324",
@@ -228,7 +228,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1248,
+        1472,
         -80
       ],
       "id": "fe0495ba-ff85-4aa7-9a9c-b76a65542752",
@@ -257,7 +257,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1424,
+        1648,
         -80
       ],
       "id": "b7f64e5f-3b93-4233-99e7-ea9f3f279bb0",
@@ -265,34 +265,13 @@
     },
     {
       "parameters": {
-        "resume": "form",
-        "formTitle": "Campaign Approval Request",
-        "formDescription": "Please review the campaign and approve or reject it.",
-        "formFields": {
-          "values": [
-            {
-              "fieldLabel": "approved",
-              "fieldType": "dropdown",
-              "fieldOptions": {
-                "values": [
-                  {
-                    "option": "Approve"
-                  },
-                  {
-                    "option": "Reject"
-                  }
-                ]
-              },
-              "requiredField": true
-            }
-          ]
-        },
-        "options": {}
+        "resume": "specificTime",
+        "dateTime": "={{ $json.scheduled_at }}"
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1808,
+        2032,
         -80
       ],
       "id": "5ef274ba-2e99-491d-89fa-87f84cb3bf1b",
@@ -326,7 +305,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2032,
+        2256,
         -80
       ],
       "id": "1178705e-23db-4d5f-a9a8-a614640094b4",
@@ -363,7 +342,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2304,
+        2528,
         -272
       ],
       "id": "c5f230c9-71aa-4d23-a4e3-f153331406fc",
@@ -386,7 +365,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        6784,
+        7008,
         -160
       ],
       "id": "ad871555-d4d1-47af-9cbf-b439de86708c",
@@ -423,7 +402,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2288,
+        2512,
         96
       ],
       "id": "74b73ffb-91d9-4436-af87-3433e56be5df",
@@ -431,12 +410,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\nconst scheduledAt = data.scheduled_at || new Date(Date.now() + 120000).toISOString();\n\nreturn [{\n  json: {\n    ...data,\n    scheduled_at: scheduledAt,\n    status: 'scheduled'\n  }\n}];"
+        "jsCode": "const data = $('Mark Campaign Approved').first().json;\n\nconst scheduledAt = data.scheduled_at || new Date(Date.now() + 120000).toISOString();\n\nreturn [{\n  json: {\n    ...data,\n    scheduled_at: scheduledAt,\n    status: 'scheduled'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2784,
+        3008,
         -272
       ],
       "id": "96ba85f6-bce4-4ef7-a0da-648b1c9da8a9",
@@ -474,7 +453,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3136,
+        3360,
         -256
       ],
       "id": "55edab74-d714-4eba-b2a6-6bcb7ec1af87",
@@ -488,7 +467,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2976,
+        3200,
         -128
       ],
       "id": "58c6a686-1144-4801-b8fe-7eb40f564962",
@@ -502,7 +481,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3296,
+        3520,
         -128
       ],
       "id": "d4154763-6886-49c4-abf6-8273ee43da2d",
@@ -539,7 +518,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3472,
+        3696,
         -240
       ],
       "id": "f1e7aab4-7887-468a-a48f-b9db3dae66e6",
@@ -552,7 +531,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3680,
+        3904,
         -128
       ],
       "id": "7942ebcb-a50a-4364-b776-4cd0ea5e89b4",
@@ -589,7 +568,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3856,
+        4080,
         -240
       ],
       "id": "0c4e8def-e7d3-4396-a258-c05615b64294",
@@ -602,7 +581,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4032,
+        4256,
         -128
       ],
       "id": "78d769ff-6eab-4fed-b723-8e7cc0caf357",
@@ -639,7 +618,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4192,
+        4416,
         -256
       ],
       "id": "6a5db0ca-e16d-433e-9058-0a1509b04d1d",
@@ -652,7 +631,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4528,
+        4752,
         -240
       ],
       "id": "64810436-eb0d-4ec6-a559-4b8fa0a9a771",
@@ -689,7 +668,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4368,
+        4592,
         -128
       ],
       "id": "7757ee24-8f50-4086-8073-afdbf42266bb",
@@ -702,7 +681,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4704,
+        4928,
         -144
       ],
       "id": "f6c1a5cc-eea9-4f0b-844a-e6d736802ca2",
@@ -710,12 +689,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    target_audience: data.target_audience || 'general',\n    segmentation_status: 'completed'\n  }\n}];;"
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    ...data,\n    target_audience: data.target_audience || 'general',\n    segmentation_status: 'completed'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4864,
+        5088,
         -240
       ],
       "id": "c5e15a32-7b9b-4a08-abf7-677dcaa59c2a",
@@ -753,7 +732,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5024,
+        5248,
         -128
       ],
       "id": "8723d201-33ed-4ef2-aef8-670d23905955",
@@ -766,7 +745,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5184,
+        5408,
         -240
       ],
       "id": "6cf33d2b-98e8-40fe-94fe-7ed164829807",
@@ -803,7 +782,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5360,
+        5584,
         -128
       ],
       "id": "72587ca1-6e9f-456f-8a4c-388c763d5d54",
@@ -816,7 +795,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5520,
+        5744,
         -240
       ],
       "id": "edc05e02-a730-4cc5-92cf-bb79a7246170",
@@ -853,7 +832,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5680,
+        5904,
         -160
       ],
       "id": "77f34e67-2bb0-412b-af3d-ded62084ef7a",
@@ -866,7 +845,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5856,
+        6080,
         -240
       ],
       "id": "26461354-b658-48d7-a96f-fb04c78d8b2c",
@@ -904,7 +883,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        6016,
+        6240,
         -160
       ],
       "id": "8e3507af-7f5e-41d8-8ce6-c14b4cb174a1",
@@ -917,7 +896,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6176,
+        6400,
         -224
       ],
       "id": "8e16f75e-e802-41f8-a111-416d65bcbfad",
@@ -930,7 +909,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6352,
+        6576,
         -160
       ],
       "id": "31836f57-4398-469a-ac2d-176f6dc9a738",
@@ -943,7 +922,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6576,
+        6800,
         -160
       ],
       "id": "c19490e2-6c19-42bc-a8e4-1cc89e65abea",
@@ -965,16 +944,16 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "[https://ntfy.sh/alaiha_n8n_approval_alerts](https://ntfy.sh/alaiha_n8n_approval_alerts)",
+        "url": "[https://ntfy.sh/alaiha_secops_appr_8f1a4e9b2c3d7f0a](https://ntfy.sh/alaiha_secops_appr_8f1a4e9b2c3d7f0a)",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"topic\": \"alaiha_n8n_approval_alerts\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
+        "jsonBody": "={\n  \"topic\": \"alaiha_secops_appr_8f1a4e9b2c3d7f0a\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1616,
+        1840,
         -80
       ],
       "id": "38e9cc68-e5ba-4877-99c6-1199f43c36de",
@@ -987,7 +966,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2528,
+        2752,
         -272
       ],
       "id": "f657b037-17a5-45bc-939e-90eadbd5b18f",
@@ -1010,14 +989,48 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        2512,
+        2736,
         96
       ],
       "id": "804359cd-faf7-43b7-aae0-7aa46465052c",
       "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet textOutput = \"\";\n\ntry {\n  let rawText = item.output || item.text || JSON.stringify(item);\n\n  if (rawText.includes(\"content\")) {\n    let cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();\n    let parsed = JSON.parse(cleaned);\n    textOutput = parsed.content || rawText;\n  } else {\n    textOutput = rawText;\n  }\n} catch (e) {\n  textOutput = item.output || \"Here are your requested details.\";\n}\n\nreturn [{\n  json: {\n    output: textOutput\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2fea1dee-16a4-4334-824d-8be8536769b4",
+      "name": "correct output"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "company_id": "COMP001",
+          "session_id": "WEB-SESS-MKT-9912",
+          "user_message": "Create a promo email campaign for our autumn cybersecurity software discount targeting small businesses.",
+          "customer_message": "Create a promo email campaign for our autumn cybersecurity software discount targeting small businesses.",
+          "company_dna": {
+            "company_name": "CyberShield Solutions",
+            "industry": "Cybersecurity",
+            "services": [
+              "Vulnerability Assessment",
+              "Cloud Security",
+              "Endpoint Protection"
+            ],
+            "pricing": "Starting at $499/mo"
+          }
+        }
+      }
+    ]
+  },
   "connections": {
     "Get Company DNA": {
       "main": [
@@ -1045,7 +1058,7 @@
       "main": [
         [
           {
-            "node": "Parse Campaign Output",
+            "node": "correct output",
             "type": "main",
             "index": 0
           }
@@ -1468,6 +1481,17 @@
           }
         ]
       ]
+    },
+    "correct output": {
+      "main": [
+        [
+          {
+            "node": "Parse Campaign Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1475,7 +1499,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "028d3c6e-6a46-4e69-932d-3245d24b71d2",
+  "versionId": "3b205dc7-d0ed-4cba-adfa-194538af32f6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
