@@ -46,8 +46,8 @@
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "position": [
-        -544,
-        592
+        -512,
+        480
       ]
     },
     {
@@ -63,61 +63,49 @@
             {
               "id": "8cfa4852-0f30-47ae-88dc-e4c3f44bf67d",
               "name": "opportunity_id",
-              "value": "=OPP-1790077795511",
+              "value": "={{ $json.opportunity_id }}",
               "type": "string"
             },
             {
               "id": "5e00fb17-628d-434f-982a-75b9fae71544",
               "name": "lead_id",
-              "value": "=LEAD-TEST-001",
+              "value": "={{ $json.lead_id }}",
               "type": "string"
             },
             {
               "id": "511931a3-ded0-4e21-8868-dda0480adf26",
               "name": "company_id",
-              "value": "=COMP001",
+              "value": "={{ $json.company_id }}",
               "type": "string"
             },
             {
               "id": "4d88f450-a6db-453d-b94e-380a761a50f6",
               "name": "session_id",
-              "value": "=TEST-001",
+              "value": "={{ $json.session_id }}",
               "type": "string"
             },
             {
               "id": "2973a629-ea4c-4b14-a660-b7ff38d740e3",
               "name": "customer_name",
-              "value": "=Ali",
+              "value": "={{ $json.customer_name }}",
               "type": "string"
             },
             {
               "id": "4d1205cd-c288-4fc6-9cce-a93136d9ce35",
               "name": "email ",
-              "value": "=ali@example.com",
+              "value": "={{ $json.email }}",
               "type": "string"
             },
             {
               "id": "2bccc1c0-ac11-4b7f-b27e-336654421a09",
               "name": "requested_service",
-              "value": "=Cloud Security Assessment",
-              "type": "string"
-            },
-            {
-              "id": "df1454df-2cc2-40c4-86ee-f0db78052cc8",
-              "name": "business_need",
-              "value": "=improve cloud security",
-              "type": "string"
-            },
-            {
-              "id": "9cd80517-ac8e-459d-9175-e901886afdd2",
-              "name": "matched_solution",
-              "value": "=Cloud Security Assessment",
+              "value": "={{ $json.requested_service }}",
               "type": "string"
             },
             {
               "id": "c3c41f75-a8da-4ea1-a53a-1c7bcca09734",
               "name": "customer_message ",
-              "value": "=I’m interested in the Cloud Security Assessment. Please send me a quote for it.",
+              "value": "={{ $json.criteria }}",
               "type": "string"
             },
             {
@@ -133,8 +121,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        -304,
-        592
+        -272,
+        480
       ],
       "id": "516833dc-f485-46fb-b5fb-34ff9bd63764",
       "name": "Accept Quote Request"
@@ -160,16 +148,6 @@
               }
             },
             {
-              "id": "211f5b05-c638-4a27-811b-6d5af4b93325",
-              "leftValue": "={{ $json.opportunity_id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            },
-            {
               "id": "45eb8f12-f2ec-4f52-a049-743b9afb2a38",
               "leftValue": "={{ $json.company_id }}",
               "rightValue": "",
@@ -188,7 +166,7 @@
       "typeVersion": 2.3,
       "position": [
         -16,
-        240
+        128
       ],
       "id": "b2a342e2-4e95-45bd-b045-1a17cb51ae55",
       "name": "Validate Quote Request"
@@ -216,8 +194,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        80,
-        480
+        128,
+        352
       ],
       "id": "c5443170-ac47-4389-bc60-e8018b9d232d",
       "name": "Reject Quote Request"
@@ -244,8 +222,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        368,
-        224
+        352,
+        112
       ],
       "id": "8b5bd29f-c76d-4312-93bf-2e5b83493b7c",
       "name": "Get Company DNA"
@@ -285,8 +263,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        272,
-        480
+        304,
+        352
       ],
       "id": "2fd0b870-c4b4-4c58-aa07-a33b29e44eb9",
       "name": "Return Quote Result"
@@ -300,8 +278,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        560,
-        560
+        592,
+        464
       ],
       "id": "ba1bf6b6-a4b9-4013-9aa2-978bcb2dd290",
       "name": "Merge"
@@ -328,8 +306,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        736,
-        560
+        768,
+        464
       ],
       "id": "c7f19890-0f19-47bf-befd-f4e31e5aa53b",
       "name": "Check Existing Quote",
@@ -821,7 +799,28 @@
       "name": "Parse Quote Agent Output"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "company_id": "COMP001",
+          "session_id": "WA-TEST-QUOTE-002",
+          "lead_id": "LEAD-1005",
+          "opportunity_id": "OPP-1005",
+          "customer_name": "Ali Khan",
+          "email": "ali@example.com",
+          "phone": "03001234567",
+          "requested_service": "Cloud Security Assessment",
+          "region": "Lahore",
+          "intent": "sales",
+          "criteria": "I want a formal quote for the Cloud Security Assessment service. Please tell me the price, what is included, and the next steps.",
+          "qualification_status": "qualified",
+          "consent_to_contact": true,
+          "lead_summary": "Qualified lead interested in Cloud Security Assessment."
+        }
+      }
+    ]
+  },
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -1067,9 +1066,8 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "fd5f4b13-027e-4128-b22d-b6e945b7c677",
+  "versionId": "704d79fc-97c5-4f81-a1cb-71ae23e360b5",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
   },
   "nodeGroups": [],
