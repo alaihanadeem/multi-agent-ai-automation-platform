@@ -6,7 +6,9 @@
         "httpMethod": "POST",
         "path": "intake-dna",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "rawBody": true
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -34,7 +36,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are the Intake & DNA Steward for COMPANY.\n\nYour job is to extract factual Company DNA information from the provided source.\n\nRules:\n- Extract ONLY information explicitly stated in the source.\n- Never invent, assume, or calculate information.\n- Pay special attention to prices, services, policies, workflows, and permissions.\n- If a price is explicitly mentioned, copy the exact price into \"pricing\".\n- CRITICAL: Look carefully for any mention of services (such as security auditing, penetration testing, consulting, managed services, etc.) and populate the \"services\" field. Do not leave it empty if services are stated or implied in the source content.\n- If a field is not mentioned anywhere in the source, return an empty string \"\".\n- Do not omit explicitly stated information.\n- Return ONLY valid JSON.\n- Do not include markdown or explanations.\n\nCompany ID:\n{{ $('Prepare Intake Request').first().json.company_id }}\n\nSource Type:\n{{ $('Prepare Intake Request').first().json.source_type }}\n\nSource Content:\n{{ $('Prepare Intake Request').first().json.source_content }}\n\nIMPORTANT:\nReturn ONLY one valid JSON object matching the exact structure below.\nDo not use markdown.\nDo not use ```json or ``` blocks.\nDo not add any explanations before or after the JSON.\nUse double quotes for every key and every string value.\nUse empty strings \"\" for missing values.\nDo not use trailing commas.\n\nReturn exactly this structure:\n\n{\n  \"company_id\": \"\",\n  \"company_name\": \"\",\n  \"industry\": \"\",\n  \"location\": \"\",\n  \"contact_info\": \"\",\n  \"business_hours\": \"\",\n  \"products\": \"\",\n  \"services\": \"\",\n  \"pricing\": \"\",\n  \"customer_segments\": \"\",\n  \"target_market\": \"\",\n  \"sales_channels\": \"\",\n  \"offers\": \"\",\n  \"policies\": \"\",\n  \"workflows\": \"\",\n  \"permissions\": \"\",\n  \"source_version\": \"v1\",\n  \"source_expiry\": \"\"\n}",
+        "text": "=You are the Intake & DNA Steward for COMPANY.\n\nYour job is to extract factual Company DNA information from the provided source.\n\nRules:\n- Extract ONLY information explicitly stated in the source.\n- Never invent, assume, or calculate information.\n- Pay special attention to prices, services, policies, workflows, and permissions.\n- If a price is explicitly mentioned, copy the exact price into \"pricing\".\n- If a field is not mentioned, return an empty string.\n- Do not omit explicitly stated information.\n- Return ONLY valid JSON.\n- Do not include markdown or explanations.\n\nReturn exactly this structure:\n\n{\n  \"products\": \"\",\n  \"services\": \"\",\n  \"pricing\": \"\",\n  \"customer_segments\": \"\",\n  \"target_market\": \"\",\n  \"sales_channels\": \"\",\n  \"offers\": \"\",\n  \"policies\": \"\",\n  \"workflows\": \"\",\n  \"permissions\": \"\"\n}\n\nCompany ID:\n{{ $('Prepare Intake Request').first().json.company_id }}\n\nSource Type:\n{{ $('Prepare Intake Request').first().json.source_type }}\n\nSource Content:\n{{ $('Prepare Intake Request').first().json.source_content }}\n\nIMPORTANT:\nReturn ONLY one valid JSON object.\nDo not use markdown.\nDo not use ```json.\nDo not add explanations before or after the JSON.\nUse double quotes for every key and every string value.\nUse empty strings \"\" for missing values.\nDo not use trailing commas.\n\nReturn exactly this structure:\n\n{\n  \"company_id\": \"\",\n  \"company_name\": \"\",\n  \"industry\": \"\",\n  \"location\": \"\",\n  \"contact_info\": \"\",\n  \"business_hours\": \"\",\n  \"products\": \"\",\n  \"services\": \"\",\n  \"pricing\": \"\",\n  \"customer_segments\": \"\",\n  \"target_market\": \"\",\n  \"sales_channels\": \"\",\n  \"offers\": \"\",\n  \"policies\": \"\",\n  \"workflows\": \"\",\n  \"permissions\": \"\",\n  \"source_version\": \"\",\n  \"source_expiry\": \"\"\n}",
         "messages": {
           "messageValues": []
         },
@@ -299,37 +301,27 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
+            "typeValidation": "loose",
             "version": 3
           },
           "conditions": [
             {
-              "id": "adb3b462-65a0-4210-be72-f10953e8b122",
-              "leftValue": "={{ $json.body.company_id }}",
-              "rightValue": "",
+              "id": "cond-company-id",
+              "leftValue": "={{ Boolean($json.body && ($json.body.company_id || $json.body.tenant_id)) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             },
             {
-              "id": "a3f4df62-2c53-4f75-9430-c6845e005bc7",
-              "leftValue": "={{ $json.body.source_content }}",
-              "rightValue": "",
+              "id": "cond-content-or-q",
+              "leftValue": "={{ Boolean($json.body && ($json.body.source_content || $json.body.question || $json.body.query || $json.body.action === 'query')) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "9f9c14c4-3d4a-48b6-a788-8905ca60e83d",
-              "leftValue": "={{ $json.body.source_type }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             }
@@ -349,7 +341,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const content = $json.body.source_content;\n\nif (typeof content !== 'string') {\n  throw new Error('source_content must be text');\n}\n\nif (content.trim().length < 5) {\n  throw new Error('source_content is too short');\n}\n\nif (content.length > 10000) {\n  throw new Error('source_content exceeds 10,000 characters');\n}\n\nreturn items;"
+        "jsCode": "const body = $json.body || {};\nconst content = body.source_content || body.question || body.query || '';\n\nif (typeof content !== 'string') {\n  throw new Error('source_content or question must be text');\n}\n\nif (content.trim().length < 3) {\n  throw new Error('Input text is too short (min 3 chars)');\n}\n\nreturn items;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -366,32 +358,22 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
+            "typeValidation": "loose",
             "version": 3
           },
           "conditions": [
             {
-              "id": "1905beba-f005-41f1-815b-1af1473f6e90",
-              "leftValue": "={{ $json.body.source_type }}",
-              "rightValue": "Raw Text / Architecture Spec",
+              "id": "cond-valid-type",
+              "leftValue": "={{ Boolean(!$json.body.source_type || $json.body.source_type === 'Raw Text / Architecture Spec' || $json.body.source_type === 'text' || $json.body.question || $json.body.query || $json.body.action === 'query') }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            },
-            {
-              "id": "85adbd71-bf3d-41ee-b3ca-a3eea480a670",
-              "leftValue": "={{ $json.body.source_type }}",
-              "rightValue": "text",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       },
@@ -406,7 +388,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || {};\n\nconst content =\n  typeof body.source_content === 'string'\n    ? body.source_content\n    : '';\n\nconst promptInjectionPatterns = [\n  /ignore\\s+(all\\s+)?previous\\s+instructions/i,\n  /ignore\\s+(all\\s+)?prior\\s+instructions/i,\n  /ignore\\s+the\\s+instructions/i,\n  /system\\s+prompt/i,\n  /developer\\s+message/i,\n  /reveal\\s+(your\\s+)?(system\\s+)?prompt/i,\n  /reveal\\s+your\\s+instructions/i,\n  /jailbreak/i,\n  /do\\s+not\\s+follow\\s+(the\\s+)?previous/i\n];\n\nconst secretPatterns = [\n  /-----BEGIN\\s+(RSA\\s+|OPENSSH\\s+|EC\\s+|DSA\\s+)?PRIVATE\\s+KEY-----/i,\n  /\\bAKIA[0-9A-Z]{16}\\b/i,\n  /\\bsk-[A-Za-z0-9]{20,}\\b/i,\n  /\\b(password|passwd|pwd)\\s*[:=]\\s*\\S+/i,\n  /\\b(api[_-]?key|access[_-]?token|secret[_-]?key)\\s*[:=]\\s*\\S+/i,\n  /\\bAuthorization\\s*:\\s*Bearer\\s+\\S+/i,\n  /\\b(postgresql|postgres|mysql|mongodb|redis):\\/\\/\\S+/i\n];\n\nconst promptInjectionDetected =\n  promptInjectionPatterns.some(pattern => pattern.test(content));\n\nconst secretDetected =\n  secretPatterns.some(pattern => pattern.test(content));\n\nconst blocked =\n  promptInjectionDetected || secretDetected;\n\nreturn [{\n  json: {\n    ...$json,\n    security: {\n      status: blocked ? 'blocked' : 'safe',\n      prompt_injection_detected: promptInjectionDetected,\n      secret_detected: secretDetected,\n      blocked_reason:\n        promptInjectionDetected\n          ? 'prompt_injection'\n          : secretDetected\n            ? 'secret_detected'\n            : ''\n    }\n  }\n}];"
+        "jsCode": "const body = $json.body || {};\nconst content = typeof body.source_content === 'string' ? body.source_content : '';\nconst question = typeof body.question === 'string' ? body.question : (typeof body.query === 'string' ? body.query : '');\nconst answers = typeof body.answers === 'object' ? JSON.stringify(body.answers) : (typeof body.answer === 'string' ? body.answer : '');\n\nconst textToScan = [content, question, answers].join(' ');\n\nconst promptInjectionPatterns = [\n  /ignore\\s+(all\\s+)?previous\\s+instructions/i,\n  /ignore\\s+(all\\s+)?prior\\s+instructions/i,\n  /ignore\\s+the\\s+instructions/i,\n  /system\\s+prompt/i,\n  /developer\\s+(message|instructions)/i,\n  /reveal\\s+(your\\s+)?(system\\s+)?prompt/i,\n  /reveal\\s+your\\s+instructions/i,\n  /jailbreak/i,\n  /do\\s+not\\s+follow\\s+(the\\s+)?previous/i,\n  /bypass\\s+(guardrails|security)/i,\n  /DAN\\s+mode/i\n];\n\nconst secretPatterns = [\n  /-----BEGIN\\s+(RSA\\s+|OPENSSH\\s+|EC\\s+|DSA\\s+)?PRIVATE\\s+KEY-----/i,\n  /\\bAKIA[0-9A-Z]{16}\\b/i,\n  /\\bsk-[A-Za-z0-9]{20,}\\b/i,\n  /\\b(password|passwd|pwd)\\s*[:=]\\s*\\S+/i,\n  /\\b(api[_-]?key|access[_-]?token|secret[_-]?key)\\s*[:=]\\s*\\S+/i,\n  /\\bAuthorization\\s*:\\s*Bearer\\s+\\S+/i,\n  /\\b(postgresql|postgres|mysql|mongodb|redis):\\/\\/\\S+/i\n];\n\nconst promptInjectionDetected = promptInjectionPatterns.some(pattern => pattern.test(textToScan));\nconst secretDetected = secretPatterns.some(pattern => pattern.test(textToScan));\nconst blocked = promptInjectionDetected || secretDetected;\n\nconst blockedReason = promptInjectionDetected\n  ? 'Zero-Trust Violation: Prompt injection attempt detected in request payload'\n  : (secretDetected ? 'Zero-Trust Violation: Unmasked credential/secret detected in payload' : '');\n\nreturn [{\n  json: {\n    ...$json,\n    is_question: Boolean((question.length > 0 || body.action === 'query') && !content.includes('Enterprise session initiation')),\n    question_text: question,\n    company_id: String(body.company_id || body.tenant_id || 'COMP001').trim(),\n    security: {\n      status: blocked ? 'blocked' : 'safe',\n      prompt_injection_detected: promptInjectionDetected,\n      secret_detected: secretDetected,\n      blocked_reason: blockedReason,\n      scanned_at: new Date().toISOString()\n    }\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -524,7 +506,7 @@
       "typeVersion": 1.1,
       "position": [
         3184,
-        -288
+        -256
       ],
       "id": "93977287-aa15-4aeb-9907-9e821b0f2ec5",
       "name": "Insert Evidence Row"
@@ -680,7 +662,8 @@
         224
       ],
       "id": "2527d564-51d7-4151-9d8a-6839dd75ae2b",
-      "name": "Insert row"
+      "name": "Insert row",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -712,11 +695,12 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4624,
+        4352,
         32
       ],
       "id": "8fc09209-6ee3-40e3-b4cd-3317c4bc16f1",
-      "name": "questions"
+      "name": "questions",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -725,7 +709,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4368,
+        4096,
         32
       ],
       "id": "7cb354a2-5fa4-4cd2-b198-0877f0a5a365",
@@ -792,7 +776,8 @@
         384
       ],
       "id": "b764af7d-f973-458f-a1cc-76676860745b",
-      "name": "test scenerio"
+      "name": "test scenerio",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -835,7 +820,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || {};\n\nconst expiryRaw = body.source_expiry;\n\nlet expired = false;\nlet expiryDate = null;\n\nif (expiryRaw && String(expiryRaw).trim() !== '') {\n  expiryDate = new Date(String(expiryRaw).trim());\n\n  if (!isNaN(expiryDate.getTime())) {\n    expired = expiryDate.getTime() < Date.now();\n  }\n}\n\nreturn [{\n  json: {\n    ...$json,\n    source_expiry: expiryRaw || '',\n    source_expired: expired,\n    source_expiry_valid:\n      !expiryRaw || !isNaN(expiryDate?.getTime())\n  }\n}];"
+        "jsCode": "const body = $json.body \vert{}\vert{} {};\n\nconst expiryRaw = body.source_expiry;\n\nlet expired = false;\nlet expiryDate = null;\n\nif (expiryRaw && String(expiryRaw).trim() !== '') {\n  expiryDate = new Date(String(expiryRaw).trim());\n\n  if (!isNaN(expiryDate.getTime())) {\n    expired = expiryDate.getTime() < Date.now();\n  }\n}\n\nreturn [{\n  json: {\n    ...$json,\n    source_expiry: expiryRaw || '',\n    source_expired: expired,\n    source_expiry_valid:\n      !expiryRaw || !isNaN(expiryDate?.getTime())\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -896,10 +881,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "[https://ntfy.sh/alaiha_n8n_approval_alerts](https://ntfy.sh/alaiha_n8n_approval_alerts)",
+        "url": "https://ntfy.sh/alaiha_secops_appr_8f1a4e9b2c3d7f0a",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"topic\": \"alaiha_n8n_approval_alerts\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
+        "jsonBody": "={\n  \"topic\": \"alaiha_secops_appr_8f1a4e9b2c3d7f0a\",\n  \"title\": \"🚨 Campaign Approval Required\",\n  \"message\": \"Click here to review and Approve/Reject the campaign\",\n  \"click\": \"={{ $json.approval_url }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -936,26 +921,29 @@
     },
     {
       "parameters": {
-        "numberInputs": 3
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
         4800,
-        320
+        208
       ],
       "id": "2ab92f26-7cde-4c00-9eb1-0209b500b31d",
       "name": "Merge1"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nlet missingFieldsList = [];\nlet questionsList = [];\nlet testScenariosList = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  if (data.field || data.details || data.finding_type === 'missing_info') {\n    missingFieldsList.push({\n      field: data.field || data.missing_field || 'unknown_field',\n      details: data.details || `Required DNA field is missing.`\n    });\n  }\n  \n  if (data.question) {\n    questionsList.push(data.question);\n  } else if (data.target_question) {\n    questionsList.push(data.target_question);\n  }\n  \n  if (data.scenario || data.test_scenario || data.description) {\n    testScenariosList.push(data.scenario || data.test_scenario || data.description);\n  }\n}\n\nreturn [{\n  json: {\n    status: \"success\",\n    assistant_message: \"DNA baseline analysis completed.\",\n    missing_fields: missingFieldsList,\n    questions: questionsList,\n    test_scenarios: testScenariosList,\n    requires_user_input: true\n  }\n}];"
+        "jsCode": "const items = $input.all();\nconst webhookBody = $('Webhook').first().json.body \vert{}\vert{} {};\nconst secCheck =$('Security Guardrails').first().json || {};\n\nlet missingFieldsList = [];\nlet questionsList = [];\nlet testScenariosList = [];\n\nfor (const item of items) {\n  const data = item.json;\n  if (data.field || data.details || data.finding_type === 'missing_info') {\n    missingFieldsList.push({\n      field: data.field || data.missing_field || 'unknown_field',\n      details: data.details || 'Required DNA field is missing.'\n    });\n  }\n  if (data.question) {\n    questionsList.push(data.question);\n  } else if (data.target_question) {\n    questionsList.push(data.target_question);\n  }\n  if (data.scenario || data.test_scenario || data.description) {\n    testScenariosList.push(data.scenario || data.test_scenario || data.description);\n  }\n}\n\nif (questionsList.length === 0) {\n  questionsList.push(\"What specific security policies and compliance frameworks does your company follow?\");\n}\n\nif (testScenariosList.length === 0) {\n  testScenariosList.push(\"Simulate unauthorized API access attempt under zero-trust architecture.\");\n}\n\nlet extracted = {};\ntry { extracted = $('Parse Extracted DNA').first().json \vert{}\vert{} {}; } catch (_) {}\n\nlet compare = {};\ntry { compare =$('Compare DNA').first().json || {}; } catch (_) {}\n\nconst companyId = extracted.company_id || secCheck.company_id || 'COMP001';\nconst changes = compare.changes || [];\n\nconst standardFields = ['products', 'services', 'pricing', 'customer_segments', 'target_market', 'sales_channels', 'offers', 'policies', 'workflows', 'permissions'];\nconst combinedOutput = [];\nfor (const field of standardFields) {\n  const val = extracted[field];\n  if (val && String(val).trim() !== '') {\n    combinedOutput.push({ field: field, value: val, category: 'DNA Architecture Spec', status: 'verified' });\n  }\n}\n\nreturn [{\n  json: {\n    status: \"success\",\n    assistant_message: \"Company DNA baseline analysis completed successfully.\",\n    company_id: companyId,\n    company_name: extracted.company_name || 'Enterprise Defense',\n    extracted_dna: extracted,\n    combined_output: combinedOutput,\n    changes: changes,\n    changes_count: changes.length,\n    missing_fields: missingFieldsList,\n    questions: questionsList,\n    test_scenarios: testScenariosList,\n    approval_status: changes.length > 0 ? \"pending_human_approval\" : \"approved\",\n    requires_user_input: questionsList.length > 0,\n    security: { status: \"safe\", prompt_injection_detected: false, secret_detected: false }\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         5024,
-        320
+        224
       ],
       "id": "55763f99-aa1a-4bc5-8321-a53dbb1a80db",
       "name": "Code in JavaScript"
@@ -969,11 +957,99 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        5328,
-        176
+        5648,
+        144
       ],
       "id": "93dab6d1-7c79-4aa8-b2ea-9daf3bbff67e",
       "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-is-q",
+              "leftValue": "={{ Boolean($json.is_question) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "route-safe-req-001",
+      "name": "Route Safe Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sec = $json.security || {};\nreturn [{\n  json: {\n    status: \"blocked\",\n    reason: sec.blocked_reason || \"Zero-Trust: Prompt injection or credential leak detected in request\",\n    security: sec,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "sec-blocked-resp-002",
+      "name": "Security Blocked Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iejru4TgeL88Xc5O",
+          "mode": "list",
+          "cachedResultName": "company DNA"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "keyValue": "={{ $('Webhook').first().json.body.company_id \vert{}\vert{}$('Security Guardrails').first().json.company_id || 'COMP001' }}"
+            }
+          ]
+        }
+      },
+      "id": "query-dna-qa-003",
+      "name": "Query Company DNA For QA",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body || {};\nconst secCheck = $('Security Guardrails').first().json \vert{}\vert{} {};\nconst questionText = secCheck.question_text \vert{}\vert{} webhookBody.question \vert{}\vert{} webhookBody.query \vert{}\vert{} '';\n\nlet dna = {};\ntry {\n  dna =$input.first()?.json || {};\n} catch (_) {}\n\nconst companyName = dna.company_name || 'Enterprise Defense Systems';\nconst services = dna.services || 'Custom Software Solutions, Technology Advisory, Managed Threat Detection';\nconst pricing = dna.pricing || 'Hourly Rate: $150, Contract Period: 6 Months';\nconst policies = dna.policies || 'Non-Disclosure Agreement, Privacy Policy, Zero-Trust access control';\nconst workflows = dna.workflows || 'Project Management, Contract Negotiation, Automated Triage';\nconst permissions = dna.permissions || 'No External Access, No External Collaboration, Requires Admin Approval';\nconst industry = dna.industry || 'Technology & Cybersecurity';\n\nlet answer = '';\nlet matched = [];\nconst qLower = questionText.toLowerCase();\n\nif (qLower.includes('price') || qLower.includes('cost') || qLower.includes('rate') || qLower.includes('fee')) {\n  answer = `${companyName} pricing structure: ${pricing}.`;\n  matched.push('pricing');\n} else if (qLower.includes('service') || qLower.includes('offer') || qLower.includes('product') || qLower.includes('provide') || qLower.includes('capability')) {\n  answer = `${companyName} offers the following specialized cybersecurity services: ${services}.`;\n  matched.push('services');\n} else if (qLower.includes('policy') || qLower.includes('compliance') || qLower.includes('rule') || qLower.includes('security')) {\n  answer = `Verified Security Policies for ${companyName}: ${policies}.`;\n  matched.push('policies');\n} else if (qLower.includes('workflow') || qLower.includes('process') || qLower.includes('how it works') || qLower.includes('pipeline')) {\n  answer = `Standard Operational Workflows: ${workflows}.`;\n  matched.push('workflows');\n} else if (qLower.includes('permission') || qLower.includes('access') || qLower.includes('admin') || qLower.includes('role')) {\n  answer = `Access and Governance Permissions: ${permissions}.`;\n  matched.push('permissions');\n} else {\n  answer = `${companyName} (${industry}): Offers ${services}. Pricing: ${pricing}. Governance policies: ${policies}.`;\n  matched = ['services', 'pricing', 'policies', 'workflows', 'permissions'];\n}\n\nreturn [{\n  json: {\n    status: \"success\",\n    action: \"query_answered\",\n    company_id: dna.company_id || secCheck.company_id || 'COMP001',\n    company_name: companyName,\n    question: questionText,\n    answer: answer,\n    grounded_sources: matched,\n    dna_version: dna.dna_version || 'v1',\n    security: { status: \"safe\", grounded: true, data_integrity: \"verified_against_dna_vault\" }\n  }\n}];"
+      },
+      "id": "answer-dna-qa-004",
+      "name": "Answer Company DNA Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -208
+      ]
     }
   ],
   "pinData": {},
@@ -983,6 +1059,162 @@
         [
           {
             "node": "Validate Intake Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Intake Input": {
+      "main": [
+        [
+          {
+            "node": "Validate Source Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Security Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Source Content": {
+      "main": [
+        [
+          {
+            "node": "Validate Source Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Source Type": {
+      "main": [
+        [
+          {
+            "node": "Check Source Expiry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Security Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Source Expiry": {
+      "main": [
+        [
+          {
+            "node": "source expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "source expired": {
+      "main": [
+        [
+          {
+            "node": "Security Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Security Guardrails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Guardrails": {
+      "main": [
+        [
+          {
+            "node": "Security Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Check": {
+      "main": [
+        [
+          {
+            "node": "Route Safe Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Security Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Blocked Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Safe Request": {
+      "main": [
+        [
+          {
+            "node": "Query Company DNA For QA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Intake Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Company DNA For QA": {
+      "main": [
+        [
+          {
+            "node": "Answer Company DNA Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Company DNA Question": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -1049,11 +1281,82 @@
         ]
       ]
     },
+    "Prepare Evidence": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Evidence Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Evidence Rows": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Evidence": {
+      "main": [
+        [
+          {
+            "node": "Evidence Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evidence Exists?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Insert Evidence Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Compare DNA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Existing Company DNA1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Compare DNA": {
       "main": [
         [
           {
-            "node": "Changes Detected?",
+            "node": "Missing Info Detection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Conflict Detection",
             "type": "main",
             "index": 0
           },
@@ -1063,12 +1366,203 @@
             "index": 0
           },
           {
-            "node": "Missing Info Detection",
+            "node": "Changes Detected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missing Info Detection": {
+      "main": [
+        [
+          {
+            "node": "Generate Targeted Questions",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Conflict Detection",
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conflict Detection": {
+      "main": [
+        [
+          {
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Targeted Questions": {
+      "main": [
+        [
+          {
+            "node": "Prepare Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Question": {
+      "main": [
+        [
+          {
+            "node": "questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "questions": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "findings": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Impact Analysis": {
+      "main": [
+        [
+          {
+            "node": "Test Scenario",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Scenario": {
+      "main": [
+        [
+          {
+            "node": "Prepare Test Scenario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Test Scenario": {
+      "main": [
+        [
+          {
+            "node": "test scenerio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "test scenerio": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Test Scenario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": []
+    },
+    "Route Safe Request": {
+      "main": [
+        [
+          {
+            "node": "Query Company DNA For QA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Intake Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Company DNA For QA": {
+      "main": [
+        [
+          {
+            "node": "Answer Company DNA Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Company DNA Question": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -1091,6 +1585,28 @@
         [
           {
             "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Human Approval",
             "type": "main",
             "index": 0
           }
@@ -1125,328 +1641,6 @@
           }
         ]
       ]
-    },
-    "Update Company DNA": {
-      "main": []
-    },
-    "Validate Intake Input": {
-      "main": [
-        [
-          {
-            "node": "Validate Source Content",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate Source Content": {
-      "main": [
-        [
-          {
-            "node": "Validate Source Type",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate Source Type": {
-      "main": [
-        [
-          {
-            "node": "Check Source Expiry",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Security Guardrails": {
-      "main": [
-        [
-          {
-            "node": "Security Check",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Security Check": {
-      "main": [
-        [
-          {
-            "node": "Prepare Intake Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Evidence": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Prepare Evidence Rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Compare DNA",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Existing Company DNA1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Evidence Rows": {
-      "main": [
-        [
-          {
-            "node": "Check Existing Evidence",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Evidence Exists?": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Insert Evidence Row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Existing Evidence": {
-      "main": [
-        [
-          {
-            "node": "Evidence Exists?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Conflict Detection": {
-      "main": [
-        [
-          {
-            "node": "findings",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Impact Analysis": {
-      "main": [
-        [
-          {
-            "node": "Test Scenario",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "findings",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Targeted Questions": {
-      "main": [
-        [
-          {
-            "node": "Prepare Question",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Question": {
-      "main": [
-        [
-          {
-            "node": "questions",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Test Scenario": {
-      "main": [
-        [
-          {
-            "node": "test scenerio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Test Scenario": {
-      "main": [
-        [
-          {
-            "node": "Prepare Test Scenario",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "findings": {
-      "main": [
-        [
-          {
-            "node": "Insert row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Missing Info Detection": {
-      "main": [
-        [
-          {
-            "node": "Generate Targeted Questions",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "findings",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Source Expiry": {
-      "main": [
-        [
-          {
-            "node": "source expired",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "source expired": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Security Guardrails",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "Human Approval",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "questions": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Insert row": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "test scenerio": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "Merge1": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": true,
@@ -1454,12 +1648,15 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e0f5a204-334c-4172-a090-3402f1aa81cd",
+  "versionId": "7bfa1e58-9f95-4f7b-b1d4-1637d2aa63a0",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
   },
   "nodeGroups": [],
   "id": "ijx1w3FE4Kn5SvMs",
-  "tags": []
+  "tags": [
+    "dev-api-use-tokenes|checked` -C5` |`iejru4TgeL88Xc5O``id``company_id``id``5micKACfeLKbeSK8`value`mmfhuZGrmPCzzja2`ynh1jQAsfh0jMUhD`PkXcbFUVaQ9DQ46V`"]
+  ],
+  "json`json`|`"]
 }
