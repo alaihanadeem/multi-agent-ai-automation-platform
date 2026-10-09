@@ -53,7 +53,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\nconst execId = String($execution.id || Date.now());\n\nreturn [{\n  json: {\n    ...data, \n    \n    feedback_id: 'FB-' + execId,\n    company_id: String(data.company_id || 'COMP001').trim(),\n    session_id: String(data.session_id || 'SESS-' + execId).trim(),\n    \n    customer_name: String(data.customer_name || data.name || '').trim(),\n    email: String(data.email || '').trim(),\n    \n    rating: Number(data.rating || 0),\n    feedback: String(data.feedback || '').trim(),\n    sentiment: String(data.sentiment || 'neutral').trim(),\n    category: String(data.category || 'general_feedback').trim(),\n    issue: String(data.issue || '').trim(),\n    human_handoff: data.human_handoff === true,\n    \n    status: 'new',\n    created_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const data = $json;\n\nconst execId = String($execution.id || Date.now());\n\nreturn [{\n  json: {\n    ...data,\n    \n    feedback_id: 'FB-' + execId,\n    company_id: String(data.company_id || 'COMP001').trim(),\n    session_id: String(data.session_id || 'SESS-' + execId).trim(),\n    \n    customer_name: String(data.customer_name || data.name || '').trim(),\n    email: String(data.email || '').trim(),\n    \n    rating: Number(data.rating || 0),\n    feedback: String(data.feedback || '').trim(),\n    sentiment: String(data.sentiment || 'neutral').trim(),\n    category: String(data.category || 'general_feedback').trim(),\n    issue: String(data.issue || '').trim(),\n    human_handoff: data.human_handoff === true,\n    \n    status: 'new',\n    created_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -311,7 +311,24 @@
       "name": "When Executed by Another Workflow"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "company_id": "COMP001",
+          "session_id": "TEST-NEG-FB01",
+          "intent": "feedback",
+          "user_message": "The service was completely terrible! Terrible support, delay in response, 0 stars!",
+          "rating": 1,
+          "sentiment": "negative",
+          "customer_name": "Test User",
+          "email": "test@example.com",
+          "phone": "+923001234567",
+          "consent_to_contact": true
+        }
+      }
+    ]
+  },
   "connections": {
     "Ollama Chat Model": {
       "ai_languageModel": [
