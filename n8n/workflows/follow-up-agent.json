@@ -81,32 +81,22 @@
           },
           "conditions": [
             {
-              "id": "84d67c11-3dab-4279-8718-f09ee4a9f244",
-              "leftValue": "={{ $json.lead_id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "1c5e97ed-1de2-44f9-a949-e6ed31e24344",
-              "leftValue": "={{ $json.company_id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            },
-            {
               "id": "7d5241eb-a7fc-46c1-afb3-078df6eb6982",
               "leftValue": "={{ $json.consent_to_contact === true || $json.opt_out === true }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "310439fc-7dc4-4f56-aa27-a6b91bfc0f21",
+              "leftValue": "={{ $json.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
                 "singleValue": true
               }
             }
@@ -446,7 +436,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_action: 'human_handoff',\n    follow_up_status: 'human_handoff',\n    next_step: 'human_handoff',\n    human_handoff: true,\n    reason: 'Customer requested human assistance.',\n    assistant_message: 'I’ll connect you with a human team member who can assist you further.',\n    updated_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_action: 'human_handoff',\n    follow_up_status: 'human_handoff',\n    next_step: 'human_handoff',\n    human_handoff: true,\n    reason: 'Customer requested human assistance.',\n    assistant_message: 'I’’ll connect you with a human team member who can assist you further.',\n    updated_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -500,7 +490,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_status: 'executed',\n    executed_at: new Date().toISOString(),\n    assistant_message: input.assistant_message || 'Following up with you regarding your request.',\n    updated_at: new Date().toISOString()\n  }\n}];;"
+        "jsCode": "const input = $input.first().json;\n\nreturn [{\n  json: {\n    ...input,\n    follow_up_status: 'executed',\n    executed_at: new Date().toISOString(),\n    assistant_message: input.assistant_message || 'Following up with you regarding your request.',\n    updated_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -694,7 +684,27 @@
       "name": "Call 'Booking AGent'"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "lead_id": "LEAD-TEST-001",
+          "company_id": "COMP001",
+          "session_id": "TEST-001",
+          "name": "Ali",
+          "email": "ali@gmail.com",
+          "phone": "03001234567",
+          "requested_service": "Cloud Security Assessment",
+          "region": "Lahore",
+          "intent": "pricing_inquiry",
+          "qualification_status": "qualified",
+          "next_step": "request_quote",
+          "customer_message": "Can you send me a price quote for the Cloud Security Assessment?",
+          "consent_to_contact": true
+        }
+      }
+    ]
+  },
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -949,7 +959,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "a77af919-b3e1-472a-9d02-eb1397bb935a",
+  "versionId": "531354c6-3629-4eaf-b8a5-fb3e9361ec49",
   "meta": {
     "instanceId": "4fedecebe1d80ace1c2d98f503e92a208d3175aa4cf28a8046564a18578cceb1"
   },
